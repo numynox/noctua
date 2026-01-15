@@ -71,6 +71,20 @@
           {/if}
         </div>
       </div>
+
+      <!-- Image Preview -->
+      {#if !compactView && article.image_url}
+        <div class="flex-none ml-2">
+          <img
+            src={article.image_url}
+            alt=""
+            class="w-24 h-24 object-cover rounded-md bg-base-300"
+            loading="lazy"
+            onerror={(e) =>
+              ((e.target as HTMLImageElement).style.display = "none")}
+          />
+        </div>
+      {/if}
     </div>
 
     <!-- Summary -->
