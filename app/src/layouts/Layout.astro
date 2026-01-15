@@ -1,0 +1,133 @@
+---
+import { loadFeedData } from "../lib/data";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "AI-curated news from your favorite sources" } =
+  Astro.props;
+const data = loadFeedData();
+const siteTitle = "Noctua News";
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title} | {siteTitle}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Theme initialization script (prevents flash) -->
+    <script is:inline>
+      (function () {
+        const theme = localStorage.getItem("noctua_theme");
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches;
+
+        let actualTheme = "dark";
+        if (theme && theme !== '"auto"') {
+          actualTheme = JSON.parse(theme);
+        } else if (!prefersDark) {
+          actualTheme = "light";
+        }
+
+        document.documentElement.setAttribute("data-theme", actualTheme);
+        document.documentElement.classList.toggle("dark", actualTheme === "dark");
+      })();
+    </script>
+  </head>
+  <body class="min-h-screen bg-base-100 text-base-content">
+    <!-- Navigation -->
+    <nav class="navbar bg-base-200 sticky top-0 z-50 shadow-sm">
+      <div class="container mx-auto px-4">
+        <div class="flex-1">
+          <a href="/" class="btn btn-ghost text-xl font-bold">
+            🦉 {siteTitle}
+          </a>
+        </div>
+        <div class="flex-none gap-2">
+          <div class="text-sm text-base-content/60">
+            Updated: {new Date(data.processed_at).toLocaleDateString()}
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="container mx-auto px-4 py-8">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer footer-center p-4 bg-base-200 text-base-content">
+      <div>
+        <p>
+          Built with 🦉 Noctua — AI-powered RSS aggregator
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: oklch(var(--bc) / 0.2);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(var(--bc) / 0.3);
+  }
+
+  /* Smooth transitions for theme changes */
+  html {
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  /* Article card hover effects */
+  .article-card {
+    transition: all 0.2s ease;
+  }
+
+  .article-card:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Read article styling */
+  .article-read {
+    opacity: 0.6;
+  }
+
+  .article-read:hover {
+    opacity: 1;
+  }
+</style>

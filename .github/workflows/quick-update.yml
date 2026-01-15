@@ -1,0 +1,108 @@
+# Noctua - Cron workflow for frequent feed updates
+# This workflow only runs steps 1, 2, and 4 (skipping AI summarization)
+# Use this for more frequent updates without consuming AI tokens
+
+name: Quick Update (No AI)
+
+on:
+  # Run every 4 hours
+  schedule:
+    - cron: '0 */4 * * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages-quick"
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
+
+jobs:
+  quick-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Python dependencies
+        run: uv sync
+
+      # Restore previous summarize output (AI summaries)
+      - name: Restore AI summaries cache
+        uses: actions/cache@v4
+        with:
+          path: output/summarize
+          key: summarize-output-${{ github.sha }}
+          restore-keys: |
+            summarize-output-
+
+      - name: Download feeds
+        run: uv run python -m workflow.download.main
+
+      - name: Filter feeds
+        run: uv run python -m workflow.filter.main
+
+      # Use cached summaries if available
+      - name: Use cached summaries
+        run: |
+          if [ -f output/summarize/data.json ]; then
+            echo "Using cached AI summaries"
+          else
+            echo "No cached summaries, copying filter output"
+            mkdir -p output/summarize
+            cp output/filter/data.json output/summarize/data.json
+          fi
+
+      - name: Install website dependencies
+        working-directory: app
+        run: npm install
+
+      - name: Build website
+        working-directory: app
+        env:
+          NOCTUA_BASE_URL: ${{ github.event.repository.name && format('/{0}/', github.event.repository.name) || '/' }}
+        run: npm run build
+
+      # Save summarize output for next run
+      - name: Save summarize cache
+        uses: actions/cache/save@v4
+        with:
+          path: output/summarize
+          key: summarize-output-${{ github.sha }}
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/dist/
+
+  deploy:
+    needs: quick-update
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

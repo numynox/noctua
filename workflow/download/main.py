@@ -1,0 +1,255 @@
+"""
+Step 1: Download and Parse RSS Feeds
+
+This module downloads RSS/Atom feeds and parses them into a structured format.
+Output is saved to output/step1/data.json for use by subsequent steps.
+"""
+
+import asyncio
+import hashlib
+import sys
+from datetime import datetime
+from pathlib import Path
+
+import feedparser
+import httpx
+from dateutil import parser as date_parser
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from workflow.common import (
+    Article,
+    Feed,
+    FeedData,
+    NoctuaConfig,
+    Section,
+    load_config,
+    save_step_output,
+)
+
+console = Console()
+
+
+def parse_date(date_str: str | None) -> datetime | None:
+    """Parse a date string into a datetime object"""
+    if not date_str:
+        return None
+    try:
+        return date_parser.parse(date_str)
+    except (ValueError, TypeError):
+        return None
+
+
+def generate_article_id(url: str, title: str) -> str:
+    """Generate a unique ID for an article"""
+    content = f"{url}:{title}"
+    return hashlib.sha256(content.encode()).hexdigest()[:16]
+
+
+def parse_feed_entry(entry: dict, feed_name: str, section_id: str) -> Article:
+    """Parse a single feed entry into an Article"""
+    # Get the URL (link)
+    url = entry.get("link", "")
+
+    # Get the unique ID
+    article_id = (
+        entry.get("id") or entry.get("guid") or generate_article_id(url, entry.get("title", ""))
+    )
+
+    # Get content - try multiple fields
+    content = None
+    if "content" in entry and entry["content"]:
+        content = entry["content"][0].get("value", "")
+    elif "summary_detail" in entry:
+        content = entry["summary_detail"].get("value", "")
+
+    summary = entry.get("summary", "")
+
+    # Parse dates
+    published = None
+    if "published_parsed" in entry and entry["published_parsed"]:
+        try:
+            published = datetime(*entry["published_parsed"][:6])
+        except (TypeError, ValueError):
+            published = parse_date(entry.get("published"))
+    else:
+        published = parse_date(entry.get("published"))
+
+    updated = None
+    if "updated_parsed" in entry and entry["updated_parsed"]:
+        try:
+            updated = datetime(*entry["updated_parsed"][:6])
+        except (TypeError, ValueError):
+            updated = parse_date(entry.get("updated"))
+    else:
+        updated = parse_date(entry.get("updated"))
+
+    # Get author
+    author = entry.get("author")
+    if not author and "authors" in entry and entry["authors"]:
+        author = entry["authors"][0].get("name")
+
+    # Get tags
+    tags = []
+    if "tags" in entry:
+        tags = [t.get("term", "") for t in entry["tags"] if t.get("term")]
+
+    return Article(
+        id=article_id,
+        title=entry.get("title", "Untitled"),
+        url=url,
+        published=published,
+        updated=updated,
+        author=author,
+        summary=summary,
+        content=content,
+        feed_name=feed_name,
+        section_id=section_id,
+        tags=tags,
+        word_count=len((content or summary or "").split()),
+    )
+
+
+async def fetch_feed(
+    client: httpx.AsyncClient,
+    feed_url: str,
+    feed_name: str,
+    section_id: str,
+) -> Feed:
+    """Fetch and parse a single feed"""
+    feed = Feed(
+        id=hashlib.sha256(feed_url.encode()).hexdigest()[:16],
+        name=feed_name,
+        url=feed_url,
+        section_id=section_id,
+    )
+
+    try:
+        response = await client.get(
+            feed_url,
+            follow_redirects=True,
+            timeout=30.0,
+        )
+        response.raise_for_status()
+
+        # Parse the feed
+        parsed = feedparser.parse(response.text)
+
+        if parsed.bozo and not parsed.entries:
+            feed.fetch_status = "error"
+            feed.fetch_error = str(parsed.bozo_exception)
+            return feed
+
+        # Extract feed metadata
+        feed.title = parsed.feed.get("title")
+        feed.description = parsed.feed.get("description") or parsed.feed.get("subtitle")
+        feed.link = parsed.feed.get("link")
+
+        # Parse entries
+        for entry in parsed.entries:
+            try:
+                article = parse_feed_entry(entry, feed_name, section_id)
+                feed.articles.append(article)
+            except Exception as e:
+                console.print(f"  [yellow]Warning: Failed to parse entry: {e}[/yellow]")
+
+        feed.fetch_status = "success"
+        feed.fetched_at = datetime.now()
+
+    except httpx.HTTPStatusError as e:
+        feed.fetch_status = "error"
+        feed.fetch_error = f"HTTP {e.response.status_code}"
+    except httpx.RequestError as e:
+        feed.fetch_status = "error"
+        feed.fetch_error = str(e)
+    except Exception as e:
+        feed.fetch_status = "error"
+        feed.fetch_error = str(e)
+
+    return feed
+
+
+async def download_feeds(config: NoctuaConfig) -> FeedData:
+    """Download all enabled feeds from the config"""
+    data = FeedData(step="download")
+
+    async with httpx.AsyncClient(
+        headers={"User-Agent": "Noctua/1.0 (RSS Feed Aggregator)"}
+    ) as client:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            for section_id, section_config in config.get_enabled_sections().items():
+                section = Section(
+                    id=section_id,
+                    name=section_config.name,
+                    description=section_config.description,
+                    icon=section_config.icon,
+                )
+
+                enabled_feeds = config.get_enabled_feeds(section_id)
+
+                if not enabled_feeds:
+                    continue
+
+                task = progress.add_task(
+                    f"[cyan]Downloading {section_config.name}...",
+                    total=len(enabled_feeds),
+                )
+
+                # Fetch all feeds in this section concurrently
+                tasks = [
+                    fetch_feed(client, feed.url, feed.name, section_id) for feed in enabled_feeds
+                ]
+
+                feeds = await asyncio.gather(*tasks)
+
+                for feed in feeds:
+                    section.feeds.append(feed)
+
+                    status_icon = "✓" if feed.fetch_status == "success" else "✗"
+                    status_color = "green" if feed.fetch_status == "success" else "red"
+
+                    console.print(
+                        f"  [{status_color}]{status_icon}[/{status_color}] "
+                        f"{feed.name}: {len(feed.articles)} articles"
+                    )
+
+                    progress.advance(task)
+
+                data.sections.append(section)
+
+    return data
+
+
+def main(config_path: str | None = None) -> None:
+    """Main entry point for"""
+    console.print("\n[bold blue]═══ Noctua: Download Feeds ═══[/bold blue]\n")
+
+    try:
+        config = load_config(config_path)
+    except FileNotFoundError as e:
+        console.print(f"[red]Error: {e}[/red]")
+        return
+
+    # Download feeds
+    data = asyncio.run(download_feeds(config))
+
+    # Save output
+    output_path = save_step_output(data, step="download")
+
+    # Summary
+    console.print(f"\n[bold green]✓ Downloaded {data.total_articles} articles[/bold green]")
+    console.print(f"  Sections: {len(data.sections)}")
+    console.print(f"  Output: {output_path}")
+
+
+if __name__ == "__main__":
+    import sys
+
+    config_path = sys.argv[1] if len(sys.argv) > 1 else None
+    main(config_path)

@@ -1,0 +1,89 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Download Feeds",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "workflow.download.main",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    },
+    {
+      "name": "Filter Feeds",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "workflow.filter.main",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false
+    },
+    {
+      "name": "Summarize (AI)",
+      "type": "node",
+      "request": "launch",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "program": "${workspaceFolder}/workflow/summarize/index.js",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Website (Dev)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "cwd": "${workspaceFolder}/app",
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "Local:.*?(https?://[^\\s]+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
+    },
+    {
+      "name": "Website (Build)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "build"
+      ],
+      "cwd": "${workspaceFolder}/app",
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Pipeline",
+      "configurations": [
+        "Download Feeds",
+        "Filter Feeds",
+        "Summarize (AI)",
+        "Website (Build)"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "order": 1
+      }
+    },
+    {
+      "name": "Python Steps",
+      "configurations": [
+        "Download Feeds",
+        "Filter Feeds"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "order": 2
+      }
+    }
+  ]
+}

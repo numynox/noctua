@@ -1,0 +1,102 @@
+# Noctua RSS Feed Configuration
+# This file is used by all steps in the pipeline
+
+# Global settings
+settings:
+  # Output directory base path (relative to project root)
+  output_base: "output"
+
+  # Website generation settings
+  website:
+    title: "Noctua News"
+    description: "AI-curated news from your favorite sources"
+    base_url: "/"  # Change for GitHub Pages deployment
+    theme: "dark"  # default theme: light, dark, or auto
+
+# Feed sections - group related feeds together
+sections:
+  technology:
+    name: "Technology"
+    description: "Tech news and updates"
+    icon: "💻"
+    enabled: true
+    feeds:
+      - name: "Heise"
+        url: "https://www.heise.de/rss/heise-atom.xml"
+        enabled: true
+      - name: "OMG Ubuntu"
+        url: "https://omgubuntu.co.uk/feed"
+        enabled: true
+
+  news:
+    name: "News"
+    description: "Global news and current events"
+    icon: "🌍"
+    enabled: true
+    feeds:
+      - name: "Tagesschau Startseite"
+        url: "https://www.tagesschau.de/index~rss2.xml"
+        enabled: true
+      - name: "Tagesschau"
+        url: "https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml"
+        enabled: true
+
+# Filtering rules applied in step 2
+filtering:
+  # Global filters applied to all feeds
+  global:
+    # Minimum article age in hours (filter out very old articles)
+    max_age_hours: 72
+    
+    # Keywords to exclude (case-insensitive)
+    exclude_keywords:
+      - "sponsored"
+      - "advertisement"
+      - "promoted"
+    
+    # Keywords that must be present (if specified, at least one must match)
+    require_keywords: []
+    
+    # Minimum content length in characters
+    min_content_length: 100
+
+  # Per-section filter overrides
+  section_overrides:
+    technology:
+      max_age_hours: 48
+      exclude_keywords:
+        - "crypto"
+        - "nft"
+    science:
+      max_age_hours: 168  # 1 week for science news
+
+# AI Summarization settings
+summarization:
+  # Model to use with Gemini (1.5-flash is most cost-effective for summarization)
+  model: "gemini-2.5-flash-lite"
+  
+  # Number of most recent articles to analyze together per section (ONE API call per section)
+  articles_per_section_summary: 20
+  
+  # Maximum articles for overall summary
+  max_articles_overall: 30
+  
+  # Prompts for summarization
+  prompts:
+    section: |
+      You are analyzing the following recent news articles from a section.
+      Create a concise summary (150-200 words) that:
+      1. Identifies the 3-5 most important or newsworthy stories
+      2. Highlights any emerging trends or patterns
+      3. Notes significant developments
+      
+      Focus on what readers should know about this topic area.
+    
+    overall: |
+      You are analyzing top news articles across multiple sections.
+      Create an executive summary (250-300 words) that:
+      1. Highlights the most significant stories of the day
+      2. Identifies cross-cutting themes or connections between stories
+      3. Provides context on why these stories matter
+      
+      Give readers a comprehensive view of today's important news.
