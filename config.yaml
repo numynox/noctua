@@ -56,6 +56,9 @@ sections:
     feeds:
       - name: "Tagesschau Startseite"
         url: "https://www.tagesschau.de/index~rss2.xml"
+        enabled: false
+      - name: "Tagesschau Meldungen"
+        url: "https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml"
         enabled: true
       - name: "Tagesschau Investigativ"
         url: "https://www.tagesschau.de/investigativ/index~rss2.xml"
@@ -66,7 +69,7 @@ sections:
 # AI Summarization settings
 summarization:
   # Model to use with Gemini (1.5-flash is most cost-effective for summarization)
-  model: "gemini-2.0-flash-lite"
+  model: "gemini-2.5-flash-lite"
   
   # Number of most recent articles to analyze together per section (ONE API call per section)
   articles_per_section_summary: 20
