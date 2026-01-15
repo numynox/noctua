@@ -1,6 +1,11 @@
-import { defineConfig } from "astro/config";
 import svelte from "@astrojs/svelte";
 import tailwind from "@astrojs/tailwind";
+import { defineConfig } from "astro/config";
+import { readFileSync } from "fs";
+import { load } from "js-yaml";
+
+// Load configuration
+const config = load(readFileSync("../config.yaml", "utf8"));
 
 // https://astro.build/config
 export default defineConfig({
@@ -10,10 +15,10 @@ export default defineConfig({
   output: "static",
 
   // Build output directory
-  outDir: "../../output/step4",
+  outDir: "../output/app",
 
   // Base path - adjust for GitHub Pages
-  base: process.env.NOCTUA_BASE_URL || "/",
+  base: config.settings?.website?.base_url || "/",
 
   // Build options
   build: {
