@@ -27,8 +27,6 @@ export interface Article {
   feed_name: string;
   section_id: string;
   tags: string[];
-  is_filtered: boolean;
-  filter_reason: string | null;
 }
 
 export interface Feed {

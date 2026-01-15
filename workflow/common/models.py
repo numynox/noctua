@@ -26,8 +26,8 @@ class Article(BaseModel):
     tags: list[str] = Field(default_factory=list)
 
     # Processing flags
-    is_filtered: bool = False
-    filter_reason: str | None = None
+    is_filtered: bool = Field(default=False, exclude=True)
+    filter_reason: str | None = Field(default=None, exclude=True)
 
     def __hash__(self) -> int:
         return hash(self.id)

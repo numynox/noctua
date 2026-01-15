@@ -16,7 +16,6 @@ import httpx
 from bs4 import BeautifulSoup
 from dateutil import parser as date_parser
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -259,50 +258,39 @@ async def download_feeds(config: NoctuaConfig) -> FeedData:
     async with httpx.AsyncClient(
         headers={"User-Agent": "Noctua/1.0 (RSS Feed Aggregator)"}
     ) as client:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
-            for section_id, section_config in config.get_enabled_sections().items():
-                section = Section(
-                    id=section_id,
-                    name=section_config.name,
-                    description=section_config.description,
-                    icon=section_config.icon,
-                )
+        for section_id, section_config in config.get_enabled_sections().items():
+            console.print(f"[cyan]Downloading {section_config.name}...[/cyan]")
 
-                enabled_feeds = config.get_enabled_feeds(section_id)
+            section = Section(
+                id=section_id,
+                name=section_config.name,
+                description=section_config.description,
+                icon=section_config.icon,
+            )
 
-                if not enabled_feeds:
-                    continue
+            enabled_feeds = config.get_enabled_feeds(section_id)
 
-                task = progress.add_task(
-                    f"[cyan]Downloading {section_config.name}...",
-                    total=len(enabled_feeds),
-                )
+            if not enabled_feeds:
+                continue
 
-                # Fetch all feeds in this section concurrently
-                tasks = [
-                    fetch_feed(client, feed.url, feed.name, section_id) for feed in enabled_feeds
-                ]
+            # Fetch all feeds in this section concurrently
+            tasks = [fetch_feed(client, feed.url, feed.name, section_id) for feed in enabled_feeds]
 
+            with console.status(f"  [dim]Fetching {len(enabled_feeds)} feeds...[/dim]"):
                 feeds = await asyncio.gather(*tasks)
 
-                for feed in feeds:
-                    section.feeds.append(feed)
+            for feed in feeds:
+                section.feeds.append(feed)
 
-                    status_icon = "✓" if feed.fetch_status == "success" else "✗"
-                    status_color = "green" if feed.fetch_status == "success" else "red"
+                status_icon = "✓" if feed.fetch_status == "success" else "✗"
+                status_color = "green" if feed.fetch_status == "success" else "red"
 
-                    console.print(
-                        f"  [{status_color}]{status_icon}[/{status_color}] "
-                        f"{feed.name}: {len(feed.articles)} articles"
-                    )
+                console.print(
+                    f"  [{status_color}]{status_icon}[/{status_color}] "
+                    f"{feed.name}: {len(feed.articles)} articles"
+                )
 
-                    progress.advance(task)
-
-                data.sections.append(section)
+            data.sections.append(section)
 
     return data
 
