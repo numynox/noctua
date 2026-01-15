@@ -13,6 +13,7 @@ from pathlib import Path
 
 import feedparser
 import httpx
+from bs4 import BeautifulSoup
 from dateutil import parser as date_parser
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -48,6 +49,55 @@ def generate_article_id(url: str, title: str) -> str:
     return hashlib.sha256(content.encode()).hexdigest()[:16]
 
 
+def sanitize_summary(text: str) -> str:
+    """
+    Sanitize summary text by removing HTML tags and links.
+    Returns plain text.
+    """
+    if not text:
+        return ""
+
+    try:
+        soup = BeautifulSoup(text, "html.parser")
+
+        # Remove script and style elements
+        for script in soup(["script", "style"]):
+            script.decompose()
+
+        # Unwrap inline elements to avoid unwanted spaces
+        inline_tags = [
+            "a",
+            "b",
+            "i",
+            "u",
+            "strong",
+            "em",
+            "span",
+            "sub",
+            "sup",
+            "code",
+            "small",
+            "big",
+        ]
+        for tag_name in inline_tags:
+            for tag in soup.find_all(tag_name):
+                tag.unwrap()
+
+        # Merge adjacent strings to prevent extra spaces during get_text
+        soup.smooth()
+
+        # Get text, separating blocks with spaces
+        text = soup.get_text(separator=" ")
+
+        # Normalize whitespace (replace multiple spaces/newlines with single space)
+        text = " ".join(text.split())
+
+        return text
+    except Exception:
+        # Fallback for very broken HTML
+        return text
+
+
 def parse_feed_entry(entry: dict, feed_name: str, section_id: str) -> Article:
     """Parse a single feed entry into an Article"""
     # Get the URL (link)
@@ -66,6 +116,38 @@ def parse_feed_entry(entry: dict, feed_name: str, section_id: str) -> Article:
         content = entry["summary_detail"].get("value", "")
 
     summary = entry.get("summary", "")
+
+    # Extract image
+    image_url = None
+
+    # 1. Try media_content (Atom/RSS media extension)
+    if "media_content" in entry:
+        for media in entry["media_content"]:
+            if media.get("medium") == "image" and "url" in media:
+                image_url = media["url"]
+                break
+
+    # 2. Try enclosures (RSS)
+    if not image_url and "enclosures" in entry:
+        for enclosure in entry["enclosures"]:
+            if enclosure.get("type", "").startswith("image/") and "href" in enclosure:
+                image_url = enclosure["href"]
+                break
+
+    # 3. Try finding image in content or summary
+    if not image_url:
+        search_text = content or summary
+        if search_text:
+            try:
+                soup = BeautifulSoup(search_text, "html.parser")
+                img = soup.find("img")
+                if img and img.get("src"):
+                    image_url = img["src"]
+            except Exception:
+                pass
+
+    # Sanitize summary
+    summary = sanitize_summary(summary)
 
     # Parse dates
     published = None
@@ -108,6 +190,7 @@ def parse_feed_entry(entry: dict, feed_name: str, section_id: str) -> Article:
         feed_name=feed_name,
         section_id=section_id,
         tags=tags,
+        image_url=image_url,
         word_count=len((content or summary or "").split()),
     )
 

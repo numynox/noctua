@@ -19,6 +19,7 @@ class Article(BaseModel):
     author: str | None = None
     summary: str | None = None  # Original summary from feed
     content: str | None = None  # Full content if available
+    image_url: str | None = None  # URL of the main image
 
     # Computed/processed fields
     clean_content: str | None = None  # Cleaned/sanitized content
