@@ -1,14 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import type { Article, Section } from "../lib/data";
   import {
+    getFilters,
+    getHiddenSections,
+    getPreferences,
     getReadArticles,
     markAsRead,
-    isArticleRead,
-    getFilters,
-    getPreferences,
-    getHiddenSections,
   } from "../lib/storage";
-  import type { Article, Section } from "../lib/data";
   import ArticleCard from "./ArticleCard.svelte";
 
   interface Props {
@@ -46,7 +45,6 @@
         (a) =>
           a.title.toLowerCase().includes(query) ||
           a.summary?.toLowerCase().includes(query) ||
-          a.ai_summary?.toLowerCase().includes(query) ||
           a.feed_name.toLowerCase().includes(query)
       );
     }

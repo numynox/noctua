@@ -11,6 +11,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import chalk from "chalk";
 import { createHash } from "crypto";
+import dotenv from "dotenv";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import yaml from "js-yaml";
 import { dirname, join } from "path";
@@ -19,6 +20,9 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PROJECT_ROOT = join(__dirname, "..", "..");
+
+// Load .env from project root
+dotenv.config({ path: join(PROJECT_ROOT, ".env") });
 
 // Configuration
 const CONFIG_PATH = join(PROJECT_ROOT, "config.yaml");
@@ -83,15 +87,6 @@ function outputExists() {
  */
 function generateHash(content) {
   return createHash("sha256").update(content).digest("hex").substring(0, 16);
-}
-
-/**
- * Use RSS feed summary for article (no individual AI summarization)
- */
-function getArticleSummary(article) {
-  // Use the summary or clean_content from the RSS feed
-  // No AI call needed per article
-  return article.summary || article.clean_content || article.title;
 }
 
 /**
@@ -255,16 +250,6 @@ async function main() {
   // Process each section
   for (const section of data.sections) {
     console.log(chalk.bold(`\n${section.icon} ${section.name}`));
-
-    // Set article summaries from RSS feed (no AI call)
-    let articleCount = 0;
-    for (const feed of section.feeds) {
-      for (const article of feed.articles) {
-        article.ai_summary = getArticleSummary(article);
-        articleCount++;
-      }
-    }
-    console.log(chalk.dim(`  📄 ${articleCount} articles using RSS summaries`));
 
     // Generate ONE section summary (analyzing N most recent articles)
     try {

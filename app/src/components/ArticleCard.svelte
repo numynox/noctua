@@ -76,7 +76,7 @@
     <!-- Summary -->
     {#if !compactView}
       <p class="text-sm text-base-content/80 line-clamp-3">
-        {article.ai_summary || article.summary || ""}
+        {article.summary || ""}
       </p>
 
       <!-- Tags -->

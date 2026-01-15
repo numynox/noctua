@@ -18,10 +18,6 @@
     "workflow:all": "npm run download && npm run filter && npm run summarize && npm run build:website",
     "install:all": "npm install && cd app && npm install && cd ../workflow/summarize && npm install"
   },
-  "dependencies": {
-    "js-yaml": "^4.1.0",
-    "chalk": "^5.3.0"
-  },
   "keywords": [
     "rss",
     "feed",

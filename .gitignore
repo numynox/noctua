@@ -2,6 +2,9 @@
 output/
 .cache/
 
+# Keep website lib directory
+!app/src/lib/
+
 # Node.js
 node_modules/
 npm-debug.log*
@@ -224,3 +227,5 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+!app/src/lib/
+!app/src/lib/
