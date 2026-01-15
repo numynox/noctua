@@ -9,7 +9,7 @@ import { join } from "path";
 const PROJECT_ROOT = join(import.meta.dirname, "..", "..", "..");
 const DATA_PATH =
   process.env.NOCTUA_STEP3_OUTPUT ||
-  join(PROJECT_ROOT, "output", "summarize", "data.json");
+  join(PROJECT_ROOT, "output", "summarize.json");
 
 export interface Article {
   id: string;

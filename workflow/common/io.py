@@ -30,19 +30,16 @@ def get_project_root() -> Path:
     return Path.cwd()
 
 
-def get_output_dir(step: str) -> Path:
+def get_base_output_dir() -> Path:
     """
-    Get the output directory for a specific step.
+    Get the base output directory.
 
     Supports environment variable overrides for Docker/CI:
     - NOCTUA_OUTPUT_DIR: Base output directory
-
-    Args:
-        step: Step name ('download', 'filter', 'summarize')
     """
     # Check for base output directory override
     if base_override := os.environ.get("NOCTUA_OUTPUT_DIR"):
-        return Path(base_override) / step
+        return Path(base_override)
 
     # Default: use config setting
     try:
@@ -51,7 +48,7 @@ def get_output_dir(step: str) -> Path:
     except FileNotFoundError:
         base = "output"
 
-    return get_project_root() / base / step
+    return get_project_root() / base
 
 
 def ensure_dir(path: Path) -> Path:
@@ -63,7 +60,7 @@ def ensure_dir(path: Path) -> Path:
 def save_step_output(
     data: BaseModel,
     step: str,
-    filename: str = "data.json",
+    filename: str | None = None,
 ) -> Path:
     """
     Save step output to JSON file.
@@ -71,12 +68,16 @@ def save_step_output(
     Args:
         data: Pydantic model to save
         step: Step name ('download', 'filter', 'summarize')
-        filename: Output filename
+        filename: Output filename (default: {step}.json)
 
     Returns:
         Path to the saved file
     """
-    output_dir = ensure_dir(get_output_dir(step))
+    output_dir = ensure_dir(get_base_output_dir())
+
+    if filename is None:
+        filename = f"{step}.json"
+
     output_path = output_dir / filename
 
     with open(output_path, "w", encoding="utf-8") as f:
@@ -88,7 +89,7 @@ def save_step_output(
 def load_step_output(
     step: str,
     model_class: type[T],
-    filename: str = "data.json",
+    filename: str | None = None,
 ) -> T:
     """
     Load step output from JSON file.
@@ -96,13 +97,17 @@ def load_step_output(
     Args:
         step: Step name ('download', 'filter', 'summarize')
         model_class: Pydantic model class to parse into
-        filename: Input filename
+        filename: Input filename (default: {step}.json)
 
     Returns:
         Parsed model instance
     """
-    input_dir = get_output_dir(step)
-    input_path = input_dir / filename
+    output_dir = get_base_output_dir()
+
+    if filename is None:
+        filename = f"{step}.json"
+
+    input_path = output_dir / filename
 
     if not input_path.exists():
         raise FileNotFoundError(

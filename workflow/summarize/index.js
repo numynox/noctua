@@ -28,16 +28,12 @@ dotenv.config({ path: join(PROJECT_ROOT, ".env") });
 const CONFIG_PATH = join(PROJECT_ROOT, "config.yaml");
 const FILTER_INPUT_PATH =
   process.env.NOCTUA_STEP2_OUTPUT ||
-  join(PROJECT_ROOT, "output", "filter", "data.json");
-const DOWNLOAD_INPUT_PATH = join(
-  PROJECT_ROOT,
-  "output",
-  "download",
-  "data.json"
-);
+  join(PROJECT_ROOT, "output", "filter.json");
+const DOWNLOAD_INPUT_PATH = join(PROJECT_ROOT, "output", "download.json");
 const OUTPUT_DIR =
-  process.env.NOCTUA_STEP3_OUTPUT || join(PROJECT_ROOT, "output", "summarize");
-const OUTPUT_PATH = join(OUTPUT_DIR, "data.json");
+  process.env.NOCTUA_OUTPUT_DIR || join(PROJECT_ROOT, "output");
+const OUTPUT_PATH =
+  process.env.NOCTUA_STEP3_OUTPUT || join(OUTPUT_DIR, "summarize.json");
 
 /**
  * Load configuration file
