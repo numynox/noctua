@@ -3,7 +3,6 @@ Configuration loading and validation for Noctua
 """
 
 from pathlib import Path
-from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field
@@ -18,11 +17,15 @@ class WebsiteSettings(BaseModel):
     theme: str = "dark"
 
 
-class Settings(BaseModel):
-    """Global settings"""
+class FilterConfig(BaseModel):
+    """Filtering rules that can be applied at global, section, or feed level"""
 
-    output_base: str = "output"
-    website: WebsiteSettings = Field(default_factory=WebsiteSettings)
+    max_age_hours: int | None = None
+    exclude_keywords: list[str] | None = None
+    require_keywords: list[str] | None = None
+    exclude_url_part: str | None = None
+    require_url_part: str | None = None
+    deduplicate: bool | None = None
 
 
 class FeedConfig(BaseModel):
@@ -31,6 +34,7 @@ class FeedConfig(BaseModel):
     name: str
     url: str
     enabled: bool = True
+    filter: FilterConfig | None = None
 
 
 class SectionConfig(BaseModel):
@@ -40,26 +44,16 @@ class SectionConfig(BaseModel):
     description: str = ""
     icon: str = "📰"
     enabled: bool = True
+    filter: FilterConfig | None = None
     feeds: list[FeedConfig] = Field(default_factory=list)
 
 
-class GlobalFilters(BaseModel):
-    """Global filtering rules"""
+class Settings(BaseModel):
+    """Global settings"""
 
-    max_age_hours: int = 72
-    exclude_keywords: list[str] = Field(default_factory=list)
-    require_keywords: list[str] = Field(default_factory=list)
-    min_content_length: int = 100
-
-
-class FilteringConfig(BaseModel):
-    """Filtering configuration"""
-
-    global_filters: GlobalFilters = Field(default_factory=GlobalFilters, alias="global")
-    section_overrides: dict[str, dict[str, Any]] = Field(default_factory=dict)
-
-    class Config:
-        populate_by_name = True
+    output_base: str = "output"
+    website: WebsiteSettings = Field(default_factory=WebsiteSettings)
+    filter: FilterConfig | None = None
 
 
 class SummarizationPrompts(BaseModel):
@@ -83,7 +77,6 @@ class NoctuaConfig(BaseModel):
 
     settings: Settings = Field(default_factory=Settings)
     sections: dict[str, SectionConfig] = Field(default_factory=dict)
-    filtering: FilteringConfig = Field(default_factory=FilteringConfig)
     summarization: SummarizationConfig = Field(default_factory=SummarizationConfig)
 
     def get_enabled_sections(self) -> dict[str, SectionConfig]:
@@ -97,16 +90,43 @@ class NoctuaConfig(BaseModel):
             return []
         return [f for f in section.feeds if f.enabled]
 
-    def get_section_filters(self, section_id: str) -> GlobalFilters:
-        """Get filters for a section (with overrides applied)"""
-        base_filters = self.filtering.global_filters.model_copy()
-        overrides = self.filtering.section_overrides.get(section_id, {})
+    def get_effective_filter(
+        self, section_id: str | None = None, feed_name: str | None = None
+    ) -> FilterConfig:
+        """
+        Resolve the hierarchical filter for a specific feed or section.
+        Precedence: Feed -> Section -> Global -> Defaults
+        """
+        # Start with defaults
+        resolved = FilterConfig(
+            max_age_hours=72, deduplicate=True
+        )  # Default 72h and deduplicate=True
 
-        for key, value in overrides.items():
-            if hasattr(base_filters, key):
-                setattr(base_filters, key, value)
+        # 1. Global level
+        if self.settings.filter:
+            self._apply_filter_override(resolved, self.settings.filter)
 
-        return base_filters
+        # 2. Section level
+        if section_id and section_id in self.sections:
+            section = self.sections[section_id]
+            if section.filter:
+                self._apply_filter_override(resolved, section.filter)
+
+            # 3. Feed level
+            if feed_name:
+                for feed in section.feeds:
+                    if feed.name == feed_name and feed.filter:
+                        self._apply_filter_override(resolved, feed.filter)
+                        break
+
+        return resolved
+
+    def _apply_filter_override(self, base: FilterConfig, override: FilterConfig) -> None:
+        """Apply overrides from one FilterConfig to another"""
+        for field in override.model_fields:
+            val = getattr(override, field)
+            if val is not None:
+                setattr(base, field, val)
 
 
 def find_config_file() -> Path:

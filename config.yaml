@@ -13,6 +13,23 @@ settings:
     base_url: "/"  # Change for GitHub Pages deployment
     theme: "dark"  # default theme: light, dark, or auto
 
+  # Global filtering rules (applied to all sections and feeds unless overridden)
+  filter:
+    # Maximum article age in hours (filter out very old articles)
+    max_age_hours: 200
+    
+    # Keywords to exclude (case-insensitive, checked in title and summary)
+    exclude_keywords:
+      - "sponsored"
+      - "advertisement"
+      - "promoted"
+    
+    # Keywords that must be present (if specified, at least one must match)
+    require_keywords: []
+
+    # Remove duplicates based on title and URL
+    deduplicate: true
+
 # Feed sections - group related feeds together
 sections:
   technology:
@@ -24,6 +41,9 @@ sections:
       - name: "Heise"
         url: "https://www.heise.de/rss/heise-atom.xml"
         enabled: true
+        filter:
+          exclude_keywords:
+            - "heise+"
       - name: "OMG Ubuntu"
         url: "https://omgubuntu.co.uk/feed"
         enabled: true
@@ -37,43 +57,16 @@ sections:
       - name: "Tagesschau Startseite"
         url: "https://www.tagesschau.de/index~rss2.xml"
         enabled: true
-      - name: "Tagesschau"
-        url: "https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml"
+      - name: "Tagesschau Investigativ"
+        url: "https://www.tagesschau.de/investigativ/index~rss2.xml"
         enabled: true
-
-# Filtering rules applied in step 2
-filtering:
-  # Global filters applied to all feeds
-  global:
-    # Minimum article age in hours (filter out very old articles)
-    max_age_hours: 72
-    
-    # Keywords to exclude (case-insensitive)
-    exclude_keywords:
-      - "sponsored"
-      - "advertisement"
-      - "promoted"
-    
-    # Keywords that must be present (if specified, at least one must match)
-    require_keywords: []
-    
-    # Minimum content length in characters
-    min_content_length: 100
-
-  # Per-section filter overrides
-  section_overrides:
-    technology:
-      max_age_hours: 48
-      exclude_keywords:
-        - "crypto"
-        - "nft"
-    science:
-      max_age_hours: 168  # 1 week for science news
+        filter:
+          max_age_hours: 400
 
 # AI Summarization settings
 summarization:
   # Model to use with Gemini (1.5-flash is most cost-effective for summarization)
-  model: "gemini-2.5-flash-lite"
+  model: "gemini-2.0-flash-lite"
   
   # Number of most recent articles to analyze together per section (ONE API call per section)
   articles_per_section_summary: 20

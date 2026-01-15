@@ -23,15 +23,15 @@ from workflow.common import (
     load_step_output,
     save_step_output,
 )
-from workflow.common.config import GlobalFilters
+from workflow.common.config import FilterConfig
 
 console = Console()
 
 
 def check_keywords(
     text: str,
-    exclude_keywords: list[str],
-    require_keywords: list[str],
+    exclude_keywords: list[str] | None,
+    require_keywords: list[str] | None,
 ) -> tuple[bool, str | None]:
     """
     Check if text passes keyword filters.
@@ -39,31 +39,57 @@ def check_keywords(
     Returns:
         (passes, reason) - True if passes, reason is set if filtered out
     """
+    if not text:
+        return True, None
+
     text_lower = text.lower()
 
     # Check exclude keywords
-    for keyword in exclude_keywords:
-        if keyword.lower() in text_lower:
-            return False, f"Contains excluded keyword: {keyword}"
+    if exclude_keywords:
+        for keyword in exclude_keywords:
+            if not keyword:
+                continue
+            if keyword.lower() in text_lower:
+                return False, f"Contains excluded keyword: {keyword}"
 
-    # Check require keywords (if any specified)
+    # Check require keywords (if any specified, at least one must match)
     if require_keywords:
-        found = any(kw.lower() in text_lower for kw in require_keywords)
-        if not found:
-            return False, "Missing required keywords"
+        # Filter out empty strings
+        active_keywords = [kw for kw in require_keywords if kw]
+        if active_keywords:
+            found = any(kw.lower() in text_lower for kw in active_keywords)
+            if not found:
+                return False, "Missing required keywords"
+
+    return True, None
+
+
+def check_url_rules(
+    url: str,
+    exclude_url_part: str | None,
+    require_url_part: str | None,
+) -> tuple[bool, str | None]:
+    """Check if URL passes URL-based filters"""
+    if not url:
+        return True, None
+
+    if exclude_url_part and exclude_url_part in url:
+        return False, f"URL contains excluded part: {exclude_url_part}"
+
+    if require_url_part and require_url_part not in url:
+        return False, f"URL missing required part: {require_url_part}"
 
     return True, None
 
 
 def filter_article(
     article: Article,
-    filters: GlobalFilters,
+    filters: FilterConfig,
     now: datetime,
 ) -> Article:
     """Apply filters to a single article"""
-    """Apply filters to a single article"""
     # Check age
-    if article.published:
+    if article.published and filters.max_age_hours is not None:
         # Make sure both datetimes are timezone-aware or naive
         pub_time = article.published
         if pub_time.tzinfo is None:
@@ -73,8 +99,19 @@ def filter_article(
 
         if age_hours > filters.max_age_hours:
             article.is_filtered = True
-            article.filter_reason = f"Too old ({age_hours:.0f}h > {filters.max_age_hours}h)"
+            article.filter_reason = f"Too old (> {filters.max_age_hours}h)"
             return article
+
+    # Check URL rules
+    passes, reason = check_url_rules(
+        article.url,
+        filters.exclude_url_part,
+        filters.require_url_part,
+    )
+    if not passes:
+        article.is_filtered = True
+        article.filter_reason = reason
+        return article
 
     # Check keywords in title and content
     text_to_check = f"{article.title} {article.summary}"
@@ -133,16 +170,18 @@ def filter_feeds(config: NoctuaConfig, data: FeedData) -> FeedData:
     }
 
     for section in data.sections:
-        section_filters = config.get_section_filters(section.id)
-
         for feed in section.feeds:
+            # Resolve the effective filter for this specific feed
+            feed_filters = config.get_effective_filter(section.id, feed.name)
+
             # Filter each article
             for i, article in enumerate(feed.articles):
                 stats["total"] += 1
-                feed.articles[i] = filter_article(article, section_filters, now)
+                feed.articles[i] = filter_article(article, feed_filters, now)
 
             # Deduplicate
-            feed.articles = deduplicate_articles(feed.articles)
+            if feed_filters.deduplicate:
+                feed.articles = deduplicate_articles(feed.articles)
 
             # Count stats
             for article in feed.articles:

@@ -152,20 +152,21 @@ sections:
 
 ### Filtering Rules
 
+Filtering can be defined globally, per section, or per feed.
+
 ```yaml
-filtering:
-  global:
+settings:
+  filter:
     max_age_hours: 72 # Exclude old articles
     exclude_keywords: # Block these terms
       - "sponsored"
       - "advertisement"
-    min_content_length: 100 # Minimum characters
 
-  section_overrides:
-    technology:
-      max_age_hours: 48
-      exclude_keywords:
-        - "crypto"
+sections:
+  technology:
+    filter:
+      max_age_hours: 48 # Override global age
+      exclude_keywords: ["crypto"]
 ```
 
 ### AI Summarization
