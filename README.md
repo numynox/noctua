@@ -12,7 +12,6 @@ Noctua is an open-source project that downloads RSS feeds, filters articles base
 - **🌐 Static Website**: Beautiful, responsive site built with Astro and Tailwind CSS
 - **💾 Local Storage**: Track read articles and preferences in browser storage
 - **🎨 Theme Support**: Light, dark, and auto themes
-- **⚡ Caching**: Smart caching for AI summaries to minimize API usage
 - **🚀 GitHub Pages**: One-click deployment with GitHub Actions
 
 ## 📁 Project Structure
@@ -108,24 +107,11 @@ npm run summarize
 npm run build:website
 ```
 
-Or use the convenience scripts:
-
-```bash
-# Windows
-run.bat
-
-# Linux/macOS
-./run.sh
-
-# Skip AI if output exists
-./run.sh --skip-if-exists
-```
-
 ### Preview the Website
 
 ```bash
 cd app
-npm run dev
+npm run dev:website
 # Open http://localhost:4321
 ```
 
@@ -167,13 +153,20 @@ sections:
     filter:
       max_age_hours: 48 # Override global age
       exclude_keywords: ["crypto"]
+      feeds:
+        - name: "Heise"
+          url: "https://www.heise.de/rss/heise-atom.xml"
+          enabled: true
+          filter:
+            max_age_hours: 12 # Override global age
+            exclude_keywords: [] # Disable exclude_keywords for this feed
 ```
 
 ### AI Summarization
 
 ```yaml
 summarization:
-  model: "gemini-2.0-flash"
+  model: "gemini-2.5-flash"
   max_articles_per_section: 10
   max_articles_overall: 20
 ```
@@ -215,14 +208,12 @@ Trigger manually from Actions tab with options:
 
 ## 🔧 Environment Variables
 
-| Variable                | Description                   | Required         |
-| ----------------------- | ----------------------------- | ---------------- |
-| `GEMINI_API_KEY`        | Google Gemini API key         | For step 3       |
-| `NOCTUA_ROOT`           | Project root directory        | Optional         |
-| `NOCTUA_OUTPUT_DIR`     | Base output directory         | Optional         |
-| `NOCTUA_STEP{N}_OUTPUT` | Override specific step output | Optional         |
-| `NOCTUA_CACHE_DIR`      | Cache directory               | Optional         |
-| `NOCTUA_BASE_URL`       | Website base URL              | For GitHub Pages |
+| Variable            | Description            | Required         |
+| ------------------- | ---------------------- | ---------------- |
+| `GEMINI_API_KEY`    | Google Gemini API key  | For summary      |
+| `NOCTUA_ROOT`       | Project root directory | Optional         |
+| `NOCTUA_OUTPUT_DIR` | Base output directory  | Optional         |
+| `NOCTUA_BASE_URL`   | Website base URL       | For GitHub Pages |
 
 ## 🌐 User Features
 
@@ -238,7 +229,7 @@ All preferences are stored in browser localStorage - each user maintains their o
 
 ## 📝 License
 
-MIT License - see [LICENSE](LICENSE) for details.
+AGPL License - see [LICENSE](LICENSE) for details.
 
 ## 🤝 Contributing
 
