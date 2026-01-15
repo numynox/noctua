@@ -1,9 +1,9 @@
 """
-Step 2: Filter and Cleanup RSS Feeds
+Filter and Cleanup RSS Feeds
 
 This module filters articles based on configuration rules and cleans up content.
-Input: output/step1/data.json
-Output: output/step2/data.json
+Input: output/download.json
+Output: output/filter.json
 """
 
 import re
@@ -11,7 +11,6 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from bs4 import BeautifulSoup
 from rich.console import Console
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -27,27 +26,6 @@ from workflow.common import (
 from workflow.common.config import GlobalFilters
 
 console = Console()
-
-
-def clean_html(html_content: str | None) -> str:
-    """Remove HTML tags and clean up content"""
-    if not html_content:
-        return ""
-
-    soup = BeautifulSoup(html_content, "lxml")
-
-    # Remove script and style elements
-    for element in soup(["script", "style", "nav", "footer", "header"]):
-        element.decompose()
-
-    # Get text
-    text = soup.get_text(separator=" ")
-
-    # Clean up whitespace
-    text = re.sub(r"\s+", " ", text)
-    text = text.strip()
-
-    return text
 
 
 def check_keywords(
@@ -83,10 +61,7 @@ def filter_article(
     now: datetime,
 ) -> Article:
     """Apply filters to a single article"""
-    # Clean the content first
-    article.clean_content = clean_html(article.content or article.summary)
-    article.word_count = len(article.clean_content.split())
-
+    """Apply filters to a single article"""
     # Check age
     if article.published:
         # Make sure both datetimes are timezone-aware or naive
@@ -101,14 +76,8 @@ def filter_article(
             article.filter_reason = f"Too old ({age_hours:.0f}h > {filters.max_age_hours}h)"
             return article
 
-    # Check content length
-    if article.word_count < filters.min_content_length // 5:  # Rough word estimate
-        article.is_filtered = True
-        article.filter_reason = f"Content too short ({article.word_count} words)"
-        return article
-
     # Check keywords in title and content
-    text_to_check = f"{article.title} {article.clean_content}"
+    text_to_check = f"{article.title} {article.summary}"
     passes, reason = check_keywords(
         text_to_check,
         filters.exclude_keywords,

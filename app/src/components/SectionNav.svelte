@@ -1,10 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import {
-    getHiddenSections,
-    toggleSectionVisibility,
-  } from "../lib/storage";
   import type { Section } from "../lib/data";
+  import { getHiddenSections, toggleSectionVisibility } from "../lib/storage";
 
   interface Props {
     sections: Section[];
@@ -40,9 +37,11 @@
   }
 </script>
 
-<div class="card bg-base-200">
+<div class="card bg-base-200 mb-3">
   <div class="card-body p-4">
-    <h3 class="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3">
+    <h3
+      class="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3"
+    >
       Sections
     </h3>
 
@@ -53,7 +52,9 @@
             <button
               onclick={() => toggleSection(section.id)}
               class="btn btn-ghost btn-xs btn-square"
-              title={hiddenSections.has(section.id) ? "Show section" : "Hide section"}
+              title={hiddenSections.has(section.id)
+                ? "Show section"
+                : "Hide section"}
             >
               {#if hiddenSections.has(section.id)}
                 <span class="opacity-50">👁️‍🗨️</span>

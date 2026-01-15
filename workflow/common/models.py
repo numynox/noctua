@@ -17,13 +17,8 @@ class Article(BaseModel):
     published: datetime | None = None
     updated: datetime | None = None
     author: str | None = None
-    summary: str | None = None  # Original summary from feed
-    content: str | None = None  # Full content if available
+    summary: str | None = None  # Consolidated and sanitized content
     image_url: str | None = None  # URL of the main image
-
-    # Computed/processed fields
-    clean_content: str | None = None  # Cleaned/sanitized content
-    word_count: int = 0
 
     # Metadata
     feed_name: str = ""

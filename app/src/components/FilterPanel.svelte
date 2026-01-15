@@ -1,14 +1,14 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import {
-    getFilters,
-    setFilters,
-    resetFilters,
-    getPreferences,
-    setPreferences,
-    clearReadHistory,
-  } from "../lib/storage";
   import type { Section } from "../lib/data";
+  import {
+    clearReadHistory,
+    getFilters,
+    getPreferences,
+    resetFilters,
+    setFilters,
+    setPreferences,
+  } from "../lib/storage";
 
   interface Props {
     sections: Section[];
@@ -66,9 +66,11 @@
   }
 </script>
 
-<div class="card bg-base-200">
+<div class="card bg-base-200 mb-3">
   <div class="card-body p-4">
-    <h3 class="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3">
+    <h3
+      class="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3"
+    >
       Filters
     </h3>
 
@@ -130,7 +132,10 @@
       <button class="btn btn-sm btn-ghost" onclick={handleReset}>
         Reset Filters
       </button>
-      <button class="btn btn-sm btn-ghost text-warning" onclick={handleClearHistory}>
+      <button
+        class="btn btn-sm btn-ghost text-warning"
+        onclick={handleClearHistory}
+      >
         Clear Read History
       </button>
     </div>

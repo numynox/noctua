@@ -1,8 +1,8 @@
 """
-Step 1: Download and Parse RSS Feeds
+Download and Parse RSS Feeds
 
 This module downloads RSS/Atom feeds and parses them into a structured format.
-Output is saved to output/step1/data.json for use by subsequent steps.
+Output is saved to output/download.json for use by subsequent steps.
 """
 
 import asyncio
@@ -61,7 +61,7 @@ def sanitize_summary(text: str) -> str:
         soup = BeautifulSoup(text, "html.parser")
 
         # Remove script and style elements
-        for script in soup(["script", "style"]):
+        for script in soup(["script", "style", "nav", "footer", "header"]):
             script.decompose()
 
         # Unwrap inline elements to avoid unwanted spaces
@@ -108,16 +108,14 @@ def parse_feed_entry(entry: dict, feed_name: str, section_id: str) -> Article:
         entry.get("id") or entry.get("guid") or generate_article_id(url, entry.get("title", ""))
     )
 
-    # Get content - try multiple fields
-    content = None
+    raw_summary = entry.get("summary", "")
+    raw_content = ""
     if "content" in entry and entry["content"]:
-        content = entry["content"][0].get("value", "")
+        raw_content = entry["content"][0].get("value", "")
     elif "summary_detail" in entry:
-        content = entry["summary_detail"].get("value", "")
+        raw_content = entry["summary_detail"].get("value", "")
 
-    summary = entry.get("summary", "")
-
-    # Extract image
+    # Extract image from raw HTML before sanitization
     image_url = None
 
     # 1. Try media_content (Atom/RSS media extension)
@@ -136,7 +134,7 @@ def parse_feed_entry(entry: dict, feed_name: str, section_id: str) -> Article:
 
     # 3. Try finding image in content or summary
     if not image_url:
-        search_text = content or summary
+        search_text = raw_content or raw_summary
         if search_text:
             try:
                 soup = BeautifulSoup(search_text, "html.parser")
@@ -146,8 +144,10 @@ def parse_feed_entry(entry: dict, feed_name: str, section_id: str) -> Article:
             except Exception:
                 pass
 
-    # Sanitize summary
-    summary = sanitize_summary(summary)
+    # Consolidate and sanitize content
+    # We prefer summary if available, otherwise content
+    combined_raw = raw_summary if raw_summary else raw_content
+    clean_summary = sanitize_summary(combined_raw)
 
     # Parse dates
     published = None
@@ -185,13 +185,11 @@ def parse_feed_entry(entry: dict, feed_name: str, section_id: str) -> Article:
         published=published,
         updated=updated,
         author=author,
-        summary=summary,
-        content=content,
+        summary=clean_summary,
         feed_name=feed_name,
         section_id=section_id,
         tags=tags,
         image_url=image_url,
-        word_count=len((content or summary or "").split()),
     )
 
 

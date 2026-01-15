@@ -23,13 +23,10 @@ export interface Article {
   updated: string | null;
   author: string | null;
   summary: string | null;
-  content: string | null;
-  clean_content: string | null;
   image_url: string | null;
   feed_name: string;
   section_id: string;
   tags: string[];
-  word_count: number;
   is_filtered: boolean;
   filter_reason: string | null;
 }
