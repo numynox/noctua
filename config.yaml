@@ -71,7 +71,7 @@ summarization:
   # Model to use with Gemini (1.5-flash is most cost-effective for summarization)
   model: "gemini-2.5-flash-lite"
   
-  # Number of most recent articles to analyze together per section (ONE API call per section)
+  # Number of most recent articles to analyze together per section
   articles_per_section_summary: 20
   
   # Maximum articles for overall summary

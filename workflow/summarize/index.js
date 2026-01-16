@@ -1,16 +1,15 @@
 /**
- * Step 3: AI Summarization using Gemini API
+ * AI Summarization using Gemini API
  *
  * This module uses the Gemini API to generate summaries for sections
  * and an overall digest. Individual articles use RSS feed summaries.
  *
- * Input: output/filter/data.json
- * Output: output/summarize/data.json
+ * Input: output/filter.json
+ * Output: output/summarize.json
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import chalk from "chalk";
-import { createHash } from "crypto";
 import dotenv from "dotenv";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import yaml from "js-yaml";
@@ -26,14 +25,11 @@ dotenv.config({ path: join(PROJECT_ROOT, ".env") });
 
 // Configuration
 const CONFIG_PATH = join(PROJECT_ROOT, "config.yaml");
-const FILTER_INPUT_PATH =
-  process.env.NOCTUA_STEP2_OUTPUT ||
-  join(PROJECT_ROOT, "output", "filter.json");
-const DOWNLOAD_INPUT_PATH = join(PROJECT_ROOT, "output", "download.json");
 const OUTPUT_DIR =
   process.env.NOCTUA_OUTPUT_DIR || join(PROJECT_ROOT, "output");
-const OUTPUT_PATH =
-  process.env.NOCTUA_STEP3_OUTPUT || join(OUTPUT_DIR, "summarize.json");
+const FILTER_INPUT_PATH = join(OUTPUT_DIR, "filter.json");
+const DOWNLOAD_INPUT_PATH = join(OUTPUT_DIR, "download.json");
+const OUTPUT_PATH = join(OUTPUT_DIR, "summarize.json");
 
 /**
  * Load configuration file
@@ -79,13 +75,6 @@ function outputExists() {
 }
 
 /**
- * Generate a hash for content comparison
- */
-function generateHash(content) {
-  return createHash("sha256").update(content).digest("hex").substring(0, 16);
-}
-
-/**
  * Initialize Gemini AI client
  */
 function initGemini() {
@@ -105,6 +94,9 @@ function initGemini() {
  */
 async function callGemini(prompt, content, model = "gemini-1.5-flash") {
   const fullPrompt = `${prompt}\n\n---\n\n${content}`;
+
+  console.log(chalk.green(`\n${fullPrompt}\n`));
+  return `Skipping call for debug.`;
 
   const genAI = initGemini();
   if (!genAI) {
@@ -136,7 +128,7 @@ async function callGemini(prompt, content, model = "gemini-1.5-flash") {
 }
 
 /**
- * Summarize a section (analyzing N most recent articles in ONE API call)
+ * Summarize a section
  */
 async function summarizeSection(section, config) {
   // Get the N most recent articles across all feeds in this section
@@ -198,9 +190,9 @@ async function summarizeOverall(data, config) {
     .map(
       (a, i) =>
         `${i + 1}. [${a.section_id}] ${a.title}\n   Source: ${a.feed_name}\n   ${
-          a.summary?.substring(0, 150) ||
-          a.clean_content?.substring(0, 150) ||
-          ""
+          a.summary ||
+          a.clean_content?.substring(0, 200) ||
+          "No summary available"
         }`
     )
     .join("\n\n");
@@ -214,7 +206,7 @@ async function summarizeOverall(data, config) {
  * Main function
  */
 async function main() {
-  console.log(chalk.bold.blue("\n═══ Noctua Step 3: AI Summarization ═══\n"));
+  console.log(chalk.bold.blue("\n═══ Noctua: AI Summarization ═══\n"));
 
   // Check if --skip-if-exists flag is provided
   const skipIfExists = process.argv.includes("--skip-if-exists");

@@ -222,7 +222,7 @@ def main(config_path: str | None = None) -> None:
         console.print(f"[red]Error: {e}[/red]")
         return
 
-    # Load step 1 output
+    # Load download output
     try:
         data = load_step_output(step="download", model_class=FeedData)
         console.print(f"[dim]Loaded {data.total_articles} articles from download step[/dim]\n")
