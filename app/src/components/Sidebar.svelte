@@ -11,15 +11,32 @@
   interface Props {
     sections: Section[];
     activeId?: string; // 'home', 'settings', or section id
+    processedAt?: string;
   }
 
-  let { sections, activeId = "home" }: Props = $props();
+  let { sections, activeId = "home", processedAt }: Props = $props();
+
+  function getRelativeTime(dateString?: string) {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return "just now";
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return "yesterday";
+    return `${diffInDays} days ago`;
+  }
 
   let searchQuery = $state("");
   let isMobileMenuOpen = $state(false);
   let hiddenFeeds = $state<Set<string>>(new Set());
 
-  // Determine which feeds to show in the sidebar
+  // Determine which feeds to show in the sidebar for the active section
   let currentFeeds = $derived.by(() => {
     if (activeId === "home") {
       return sections.flatMap((s) => s.feeds);
@@ -94,7 +111,7 @@
 
 <!-- Sidebar Container -->
 <aside
-  class="fixed lg:static inset-y-0 left-0 z-40 w-80 bg-base-200 border-r border-base-300 transform transition-transform duration-300 ease-in-out flex flex-col
+  class="fixed lg:sticky top-0 left-0 z-40 w-80 h-screen bg-base-200 border-r border-base-300 transform transition-transform duration-300 ease-in-out flex flex-col
     {isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}"
 >
   <!-- Logo -->
@@ -128,10 +145,11 @@
 
   <!-- Navigation -->
   <nav class="flex-1 overflow-y-auto px-4 pb-6 custom-scrollbar">
-    <div class="space-y-6">
-      <!-- Main Menu -->
+    <div class="space-y-2">
+      <!-- Transition wrapper for each main link to allow for sub-items -->
+
+      <!-- Home Link + Toggles -->
       <div class="space-y-1">
-        <!-- Home -->
         <a
           href="/"
           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all
@@ -144,8 +162,36 @@
           <span class="flex-1">Home</span>
         </a>
 
-        <!-- Sections -->
-        {#each sections as section}
+        {#if activeId === "home" && currentFeeds.length > 0}
+          <div class="ml-4 pl-4 border-l-2 border-primary/20 space-y-1 my-2">
+            {#each currentFeeds as feed}
+              <label
+                class="flex items-center gap-3 px-3 py-1.5 rounded-lg cursor-pointer transition-colors hover:bg-base-300/50
+                {!hiddenFeeds.has(feed.id)
+                  ? 'text-base-content/80'
+                  : 'text-base-content/40'}"
+              >
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-xs checkbox-primary"
+                  checked={!hiddenFeeds.has(feed.id)}
+                  onchange={() => toggleFeed(feed.id)}
+                />
+                <span class="text-xs truncate flex-1" title={feed.name}>
+                  {feed.name}
+                </span>
+                <span class="text-[10px] opacity-40 font-mono">
+                  {feed.articles.length}
+                </span>
+              </label>
+            {/each}
+          </div>
+        {/if}
+      </div>
+
+      <!-- Sections Loop -->
+      {#each sections as section}
+        <div class="space-y-1">
           <a
             href={`/sections/${section.id}`}
             class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all
@@ -157,44 +203,46 @@
             <span class="text-xl">{section.icon}</span>
             <span class="flex-1 truncate">{section.name}</span>
           </a>
-        {/each}
-      </div>
 
-      <!-- Feed Visibility Toggles -->
-      {#if activeId !== "settings" && currentFeeds.length > 0}
-        <div class="px-2">
-          <h3
-            class="px-2 text-[10px] font-bold uppercase tracking-[0.2em] text-base-content/30 mb-3"
-          >
-            Feed Visibility
-          </h3>
-          <div class="space-y-1">
-            {#each currentFeeds as feed}
-              <label
-                class="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-base-300/50
-                {!hiddenFeeds.has(feed.id)
-                  ? 'text-base-content/80'
-                  : 'text-base-content/40'}"
-              >
-                <input
-                  type="checkbox"
-                  class="checkbox checkbox-xs checkbox-primary"
-                  checked={!hiddenFeeds.has(feed.id)}
-                  onchange={() => toggleFeed(feed.id)}
-                />
-                <span class="text-sm truncate flex-1" title={feed.name}>
-                  {feed.name}
-                </span>
-                <span class="text-[10px] opacity-40 font-mono">
-                  {feed.articles.length}
-                </span>
-              </label>
-            {/each}
-          </div>
+          {#if activeId === section.id && currentFeeds.length > 0}
+            <div class="ml-4 pl-4 border-l-2 border-primary/20 space-y-1 my-2">
+              {#each currentFeeds as feed}
+                <label
+                  class="flex items-center gap-3 px-3 py-1.5 rounded-lg cursor-pointer transition-colors hover:bg-base-300/50
+                  {!hiddenFeeds.has(feed.id)
+                    ? 'text-base-content/80'
+                    : 'text-base-content/40'}"
+                >
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-xs checkbox-primary"
+                    checked={!hiddenFeeds.has(feed.id)}
+                    onchange={() => toggleFeed(feed.id)}
+                  />
+                  <span class="text-xs truncate flex-1" title={feed.name}>
+                    {feed.name}
+                  </span>
+                  <span class="text-[10px] opacity-40 font-mono">
+                    {feed.articles.length}
+                  </span>
+                </label>
+              {/each}
+            </div>
+          {/if}
         </div>
-      {/if}
+      {/each}
     </div>
   </nav>
+
+  {#if processedAt}
+    <div class="px-6 py-2 mb-3">
+      <div
+        class="text-[10px] text-base-content/30 text-center uppercase tracking-wider"
+      >
+        Last updated {getRelativeTime(processedAt)}
+      </div>
+    </div>
+  {/if}
 
   <!-- Bottom Links -->
   <div class="p-4 border-t border-base-300">
