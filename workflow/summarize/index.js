@@ -95,9 +95,6 @@ function initGemini() {
 async function callGemini(prompt, content, model = "gemini-1.5-flash") {
   const fullPrompt = `${prompt}\n\n---\n\n${content}`;
 
-  console.log(chalk.green(`\n${fullPrompt}\n`));
-  return `Skipping call for debug.`;
-
   const genAI = initGemini();
   if (!genAI) {
     return `[AI summary unavailable - no API key]`;
@@ -147,7 +144,10 @@ async function summarizeSection(section, config) {
     )
   );
 
-  const prompt = config.summarization.prompts.section;
+  const prompt =
+    config.summarization.prompts.section +
+    `\n\nOutput language: ${config.summarization.output_language || "English"}. The entire summary must be written in this language.` +
+    "\n\nIMPORTANT: Use ONLY bold text (**keyword**) for markdown formatting. All other text must be plain text. Highlight the most important keywords and phrases in bold.";
 
   // Build comprehensive content with titles and summaries
   const content = topArticles
@@ -185,11 +185,14 @@ async function summarizeOverall(data, config) {
     )
   );
 
-  const prompt = config.summarization.prompts.overall;
+  const prompt =
+    config.summarization.prompts.overall +
+    `\n\nOutput language: ${config.summarization.output_language || "English"}. The entire summary must be written in this language.` +
+    "\n\nIMPORTANT: Use ONLY bold text (**keyword**) for markdown formatting. All other text must be plain text. Highlight the most important keywords and phrases in bold.";
   const content = allArticles
     .map(
       (a, i) =>
-        `${i + 1}. [${a.section_id}] ${a.title}\n   Source: ${a.feed_name}\n   ${
+        `${i + 1}. ${a.title}\n   Source: ${a.feed_name}\n   ${
           a.summary ||
           a.clean_content?.substring(0, 200) ||
           "No summary available"

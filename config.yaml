@@ -69,30 +69,31 @@ sections:
 # AI Summarization settings
 summarization:
   # Model to use with Gemini (1.5-flash is most cost-effective for summarization)
-  model: "gemini-2.5-flash-lite"
+  model: "gemma-3-27b-it"
+  
+  # Language for the generated summaries (e.g. English or German)
+  output_language: "German"
   
   # Number of most recent articles to analyze together per section
-  articles_per_section_summary: 20
+  articles_per_section_summary: 10
   
   # Maximum articles for overall summary
-  max_articles_overall: 30
+  max_articles_overall: 10
   
   # Prompts for summarization
   prompts:
     section: |
-      You are analyzing the following recent news articles from a section.
-      Create a concise summary (150-200 words) that:
-      1. Identifies the 3-5 most important or newsworthy stories
-      2. Highlights any emerging trends or patterns
-      3. Notes significant developments
-      
-      Focus on what readers should know about this topic area.
+      You are analyzing the following recent news articles.
+      Create a concise summary (60 words) that
+      1. Identifies the most important stories
+      2. Highlights significant developments and trends connecting the stories
+      Present your answer as a single paragraph and as if it was written by a human journalist on the front page of a newspaper.
+      3. Leave out any articles that are not impactful.
     
     overall: |
-      You are analyzing top news articles across multiple sections.
-      Create an executive summary (250-300 words) that:
-      1. Highlights the most significant stories of the day
-      2. Identifies cross-cutting themes or connections between stories
-      3. Provides context on why these stories matter
-      
-      Give readers a comprehensive view of today's important news.
+      You are analyzing recent news articles.
+      Create a concise summary (75 words) that
+      1. Identifies the most important stories in each news section
+      2. Highlights significant developments and trends connecting the stories
+      Present your answer as a single paragraph and as if it was written by a human journalist on the front page of a newspaper.
+      3. Leave out any articles that are not impactful.

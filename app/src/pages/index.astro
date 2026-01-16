@@ -1,19 +1,27 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import { loadFeedData, getAllArticles } from "../lib/data";
 import ArticleList from "../components/ArticleList.svelte";
+import FilterPanel from "../components/FilterPanel.svelte";
 import SectionNav from "../components/SectionNav.svelte";
 import ThemeToggle from "../components/ThemeToggle.svelte";
-import FilterPanel from "../components/FilterPanel.svelte";
+import Layout from "../layouts/Layout.astro";
+import { getAllArticles, loadFeedData } from "../lib/data";
+
+import { marked } from "marked";
 
 const data = loadFeedData();
 const allArticles = getAllArticles(data);
+
+const overallSummaryHtml = data.overall_summary
+  ? marked.parse(data.overall_summary)
+  : "";
 ---
 
 <Layout title="Home">
   <!-- Header section with summary -->
   <div class="mb-8">
-    <div class="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6">
+    <div
+      class="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6"
+    >
       <div>
         <h1 class="text-3xl font-bold mb-2">Today's News Digest</h1>
         <p class="text-base-content/70">
@@ -33,7 +41,10 @@ const allArticles = getAllArticles(data);
             <h2 class="card-title text-primary">
               <span class="text-2xl">✨</span> AI Summary
             </h2>
-            <p class="prose prose-sm max-w-none">{data.overall_summary}</p>
+            <div
+              class="prose prose-sm max-w-none"
+              set:html={overallSummaryHtml}
+            />
           </div>
         </div>
       )

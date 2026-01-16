@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { marked } from "marked";
   import { onMount } from "svelte";
   import type { Article, Section } from "../lib/data";
   import {
@@ -155,7 +156,9 @@
         <!-- Section AI Summary -->
         {#if section.ai_summary}
           <div class="alert bg-base-200 mb-4">
-            <span class="text-sm">{section.ai_summary}</span>
+            <span class="text-sm prose prose-sm max-w-none">
+              {@html marked.parse(section.ai_summary)}
+            </span>
           </div>
         {/if}
 

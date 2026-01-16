@@ -29,6 +29,13 @@
     });
   }
 
+  function handleImageError(e: Event) {
+    const target = e.target as HTMLImageElement;
+    if (target) {
+      target.style.display = "none";
+    }
+  }
+
   function handleClick() {
     onArticleClick();
   }
@@ -80,8 +87,7 @@
             alt=""
             class="w-24 h-24 object-cover rounded-md bg-base-300"
             loading="lazy"
-            onerror={(e) =>
-              ((e.target as HTMLImageElement).style.display = "none")}
+            onerror={handleImageError}
           />
         </div>
       {/if}

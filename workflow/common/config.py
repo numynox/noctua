@@ -67,6 +67,7 @@ class SummarizationConfig(BaseModel):
     """AI summarization settings"""
 
     model: str = "gemini-1.5-flash"
+    output_language: str = "English"
     articles_per_section_summary: int = 20
     max_articles_overall: int = 30
     prompts: SummarizationPrompts = Field(default_factory=SummarizationPrompts)
