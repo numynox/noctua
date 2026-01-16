@@ -7,7 +7,7 @@
 const STORAGE_KEYS = {
   THEME: "noctua_theme",
   READ_ARTICLES: "noctua_read_articles",
-  HIDDEN_SECTIONS: "noctua_hidden_sections",
+  HIDDEN_FEEDS: "noctua_hidden_feeds",
   FILTERS: "noctua_filters",
   PREFERENCES: "noctua_preferences",
 } as const;
@@ -27,9 +27,6 @@ export interface UserPreferences {
  */
 export interface FilterSettings {
   searchQuery: string;
-  selectedSections: string[];
-  selectedFeeds: string[];
-  dateRange: "all" | "today" | "week" | "month";
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -41,9 +38,6 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 
 const DEFAULT_FILTERS: FilterSettings = {
   searchQuery: "",
-  selectedSections: [],
-  selectedFeeds: [],
-  dateRange: "all",
 };
 
 /**
@@ -135,28 +129,28 @@ export function clearReadHistory(): void {
   setStorageItem(STORAGE_KEYS.READ_ARTICLES, []);
 }
 
-// ============ Hidden Sections ============
+// ============ Hidden Feeds ============
 
-export function getHiddenSections(): Set<string> {
-  const sections = getStorageItem<string[]>(STORAGE_KEYS.HIDDEN_SECTIONS, []);
-  return new Set(sections);
+export function getHiddenFeeds(): Set<string> {
+  const feeds = getStorageItem<string[]>(STORAGE_KEYS.HIDDEN_FEEDS, []);
+  return new Set(feeds);
 }
 
-export function toggleSectionVisibility(sectionId: string): boolean {
-  const hidden = getHiddenSections();
+export function toggleFeedVisibility(feedId: string): boolean {
+  const hidden = getHiddenFeeds();
 
-  if (hidden.has(sectionId)) {
-    hidden.delete(sectionId);
+  if (hidden.has(feedId)) {
+    hidden.delete(feedId);
   } else {
-    hidden.add(sectionId);
+    hidden.add(feedId);
   }
 
-  setStorageItem(STORAGE_KEYS.HIDDEN_SECTIONS, Array.from(hidden));
-  return !hidden.has(sectionId);
+  setStorageItem(STORAGE_KEYS.HIDDEN_FEEDS, Array.from(hidden));
+  return !hidden.has(feedId);
 }
 
-export function isSectionHidden(sectionId: string): boolean {
-  return getHiddenSections().has(sectionId);
+export function isFeedHidden(feedId: string): boolean {
+  return getHiddenFeeds().has(feedId);
 }
 
 // ============ Preferences ============
