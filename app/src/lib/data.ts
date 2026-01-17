@@ -5,6 +5,7 @@
 
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { load } from "js-yaml";
 
 const PROJECT_ROOT = join(import.meta.dirname, "..", "..", "..");
 
@@ -14,6 +15,26 @@ const FALLBACK_PATHS = [
   "output/filter.json",
   "output/download.json",
 ];
+
+/**
+ * Load configuration from config.yaml
+ */
+export function loadConfig() {
+  const configPath = join(PROJECT_ROOT, "config.yaml");
+  if (existsSync(configPath)) {
+    const configData = readFileSync(configPath, "utf-8");
+    return load(configData) as any;
+  }
+  return {};
+}
+
+/**
+ * Get the base URL from configuration
+ */
+export function getBaseUrl(): string {
+  const config = loadConfig();
+  return config.settings?.website?.base_url || "/";
+}
 
 export interface Article {
   id: string;

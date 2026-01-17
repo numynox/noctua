@@ -1,6 +1,7 @@
 ---
 import Sidebar from "../components/Sidebar.svelte";
-import { loadFeedData } from "../lib/data";
+import { loadFeedData, getBaseUrl } from "../lib/data";
+import "../styles/app.css";
 
 interface Props {
   title: string;
@@ -15,6 +16,7 @@ const {
 } = Astro.props;
 const data = loadFeedData();
 const siteTitle = "Noctua News";
+const baseUrl = getBaseUrl();
 ---
 
 <!doctype html>
@@ -28,10 +30,7 @@ const siteTitle = "Noctua News";
     <title>{title} | {siteTitle}</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-
-    <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="/src/styles/app.css" />
+    <link rel="icon" type="image/svg+xml" href={`${baseUrl}favicon.svg`} />
 
     <!-- Theme initialization script (prevents flash) -->
     <script is:inline>
@@ -63,6 +62,7 @@ const siteTitle = "Noctua News";
         sections={data.sections}
         activeId={activeId}
         processedAt={data.processed_at}
+        baseUrl={baseUrl}
         client:load
       />
 
