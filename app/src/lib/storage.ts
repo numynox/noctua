@@ -272,25 +272,59 @@ export function clearSeenHistory(): void {
 // ============ Hidden Feeds ============
 
 export function getHiddenFeeds(): Set<string> {
-  const feeds = getStorageItem<string[]>(STORAGE_KEYS.HIDDEN_FEEDS, []);
-  return new Set(feeds);
+  // Deprecated: previous format was an array of feed ids. New format is
+  // an object mapping contextId -> string[] (e.g. { home: [...], tech: [...] }).
+  const raw = getStorageItem<any>(STORAGE_KEYS.HIDDEN_FEEDS, {});
+  if (Array.isArray(raw)) {
+    // Legacy array — treat as global/home hidden list for backward compat.
+    return new Set(raw);
+  }
+  // If it's an object, return the 'home' context by default (global view)
+  if (raw && typeof raw === "object") {
+    const arr = raw["home"] || [];
+    return new Set(arr);
+  }
+  return new Set();
 }
 
-export function toggleFeedVisibility(feedId: string): boolean {
-  const hidden = getHiddenFeeds();
+export function getHiddenFeedsForContext(contextId = "home"): Set<string> {
+  const raw = getStorageItem<any>(STORAGE_KEYS.HIDDEN_FEEDS, {});
+  if (Array.isArray(raw)) {
+    // Legacy array — assume applies to all contexts
+    return new Set(raw);
+  }
+  if (raw && typeof raw === "object") {
+    const arr = raw[contextId] || [];
+    return new Set(arr);
+  }
+  return new Set();
+}
 
-  if (hidden.has(feedId)) {
-    hidden.delete(feedId);
-  } else {
-    hidden.add(feedId);
+export function toggleFeedVisibility(feedId: string, contextId = "home"): boolean {
+  const raw = getStorageItem<any>(STORAGE_KEYS.HIDDEN_FEEDS, {});
+
+  let data: Record<string, string[]> = {};
+  if (Array.isArray(raw)) {
+    // Migrate legacy array into home context
+    data = { home: raw };
+  } else if (raw && typeof raw === "object") {
+    data = { ...raw };
   }
 
-  setStorageItem(STORAGE_KEYS.HIDDEN_FEEDS, Array.from(hidden));
-  return !hidden.has(feedId);
+  const list = new Set<string>(data[contextId] || []);
+  if (list.has(feedId)) {
+    list.delete(feedId);
+  } else {
+    list.add(feedId);
+  }
+  data[contextId] = Array.from(list);
+
+  setStorageItem(STORAGE_KEYS.HIDDEN_FEEDS, data);
+  return !list.has(feedId);
 }
 
-export function isFeedHidden(feedId: string): boolean {
-  return getHiddenFeeds().has(feedId);
+export function isFeedHidden(feedId: string, contextId = "home"): boolean {
+  return getHiddenFeedsForContext(contextId).has(feedId);
 }
 
 // ============ Preferences ============

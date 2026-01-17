@@ -3,7 +3,7 @@
   import type { Section } from "../lib/data";
   import {
     getFilters,
-    getHiddenFeeds,
+    getHiddenFeedsForContext,
     getPreferences,
     getReadArticles,
     getSeenArticles,
@@ -62,7 +62,7 @@
   onMount(() => {
     const filters = getFilters();
     searchQuery = filters.searchQuery || "";
-    hiddenFeeds = getHiddenFeeds();
+    hiddenFeeds = getHiddenFeedsForContext(activeId);
     hideSeenArticles = getPreferences().hideSeenArticles;
 
     // Keep local copies of read/seen maps so Svelte reactivity updates
@@ -108,8 +108,8 @@
   }
 
   function toggleFeed(feedId: string) {
-    toggleFeedVisibility(feedId);
-    hiddenFeeds = getHiddenFeeds();
+    toggleFeedVisibility(feedId, activeId);
+    hiddenFeeds = getHiddenFeedsForContext(activeId);
     window.dispatchEvent(
       new CustomEvent("feedsChanged", { detail: { hiddenFeeds } }),
     );

@@ -11,6 +11,7 @@
     markAsRead,
     markAsSeen,
   } from "../lib/storage";
+  import { getHiddenFeedsForContext } from "../lib/storage";
   import ArticleCard from "./ArticleCard.svelte";
 
   interface Props {
@@ -116,12 +117,14 @@
   let filteredArticles = $derived.by(() => {
     let result = articles;
 
-    // Filter by hidden feeds
+    // Filter by hidden feeds (per-context). For home view (flat list), use
+    // the 'home' context. For section view, use the article's section id.
     if (hiddenFeeds.size > 0) {
       result = result.filter((a) => {
         const section = sections.find((s) => s.id === a.section_id);
         const feed = section?.feeds.find((f) => f.name === a.feed_name);
-        return !feed || !hiddenFeeds.has(feed.id);
+        const contextHidden = getHiddenFeedsForContext(groupBySection ? a.section_id : "home");
+        return !feed || !contextHidden.has(feed.id);
       });
     }
 
@@ -169,7 +172,9 @@
   onMount(() => {
     readArticles = getReadArticles();
     seenArticles = getSeenArticles();
-    hiddenFeeds = getHiddenFeeds();
+    // Default to home context for hidden feeds on the flat list; per-article
+    // filtering will use per-section contexts where appropriate.
+    hiddenFeeds = getHiddenFeedsForContext("home");
 
     // Snapshot the initial read/seen state for filtering (so items
     // marked during this session are not hidden immediately).
