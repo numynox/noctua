@@ -4,14 +4,13 @@
   import type { ArticleStatuses } from "../lib/storage";
   import {
     getFilters,
-    getHiddenFeeds,
+    getHiddenFeedsForContext,
     getPreferences,
     getReadArticles,
     getSeenArticles,
     markAsRead,
     markAsSeen,
   } from "../lib/storage";
-  import { getHiddenFeedsForContext } from "../lib/storage";
   import ArticleCard from "./ArticleCard.svelte";
 
   interface Props {
@@ -123,7 +122,9 @@
       result = result.filter((a) => {
         const section = sections.find((s) => s.id === a.section_id);
         const feed = section?.feeds.find((f) => f.name === a.feed_name);
-        const contextHidden = getHiddenFeedsForContext(groupBySection ? a.section_id : "home");
+        const contextHidden = getHiddenFeedsForContext(
+          groupBySection ? a.section_id : "home",
+        );
         return !feed || !contextHidden.has(feed.id);
       });
     }

@@ -300,7 +300,10 @@ export function getHiddenFeedsForContext(contextId = "home"): Set<string> {
   return new Set();
 }
 
-export function toggleFeedVisibility(feedId: string, contextId = "home"): boolean {
+export function toggleFeedVisibility(
+  feedId: string,
+  contextId = "home",
+): boolean {
   const raw = getStorageItem<any>(STORAGE_KEYS.HIDDEN_FEEDS, {});
 
   let data: Record<string, string[]> = {};
