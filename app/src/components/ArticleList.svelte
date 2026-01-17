@@ -4,7 +4,7 @@
   import type { ArticleStatuses } from "../lib/storage";
   import {
     getFilters,
-    getHiddenFeeds,
+    getHiddenFeedsForContext,
     getPreferences,
     getReadArticles,
     getSeenArticles,
@@ -28,7 +28,11 @@
   let hideSeenArticles = $state(true);
   let autoMarkAsSeen = $state(true);
 
-  // Store initial read/seen state for filtering
+  // Snapshot of read/seen state at page load. We use these snapshots
+  // for filtering so articles marked as seen/read during the current
+  // session are not immediately hidden — they will be hidden after
+  // a page refresh. Live `readArticles`/`seenArticles` are still used
+  // for counts and UI state.
   let initialReadArticles = $state<ArticleStatuses>({});
   let initialSeenArticles = $state<ArticleStatuses>({});
 
@@ -53,8 +57,15 @@
         const articleId = element.getAttribute("data-article-id");
 
         // Mark as seen if article is above viewport (scrolled past) and not already marked
+        // but only if it is within one viewport height above the top. This
+        // prevents marking items that were jumped far past (e.g., from a
+        // navigation or rapid scroll).
+        const bottom = rect.bottom;
+        const viewportH =
+          window.innerHeight || document.documentElement.clientHeight || 0;
         if (
-          rect.bottom < 0 &&
+          bottom < 0 &&
+          bottom > -viewportH &&
           articleId &&
           !readArticles[articleId] &&
           !seenArticles[articleId]
@@ -73,16 +84,23 @@
     observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          // Mark as seen when article completely leaves the viewport (scrolled past)
-          if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
-            const articleId = entry.target.getAttribute("data-article-id");
-            if (
-              articleId &&
-              !readArticles[articleId] &&
-              !seenArticles[articleId]
-            ) {
-              markAsSeen(articleId);
-              seenArticles = getSeenArticles();
+          // Mark as seen when article leaves the viewport from the top, but
+          // only if it is within one viewport height above the top. This
+          // avoids marking items that were scrolled/jumped far out of view.
+          if (!entry.isIntersecting) {
+            const bottom = entry.boundingClientRect.bottom;
+            const viewportH =
+              window.innerHeight || document.documentElement.clientHeight || 0;
+            if (bottom < 0 && bottom > -viewportH) {
+              const articleId = entry.target.getAttribute("data-article-id");
+              if (
+                articleId &&
+                !readArticles[articleId] &&
+                !seenArticles[articleId]
+              ) {
+                markAsSeen(articleId);
+                seenArticles = getSeenArticles();
+              }
             }
           }
         });
@@ -98,16 +116,20 @@
   let filteredArticles = $derived.by(() => {
     let result = articles;
 
-    // Filter by hidden feeds
+    // Filter by hidden feeds (per-context). For home view (flat list), use
+    // the 'home' context. For section view, use the article's section id.
     if (hiddenFeeds.size > 0) {
       result = result.filter((a) => {
         const section = sections.find((s) => s.id === a.section_id);
         const feed = section?.feeds.find((f) => f.name === a.feed_name);
-        return !feed || !hiddenFeeds.has(feed.id);
+        const contextHidden = getHiddenFeedsForContext(
+          groupBySection ? a.section_id : "home",
+        );
+        return !feed || !contextHidden.has(feed.id);
       });
     }
 
-    // Filter by read/seen status (only hide articles that were read/seen at page load)
+    // Filter by read/seen status (hide articles that were read/seen at page load)
     if (hideSeenArticles) {
       result = result.filter(
         (a) => !initialReadArticles[a.id] && !initialSeenArticles[a.id],
@@ -141,12 +163,22 @@
     return grouped;
   });
 
+  // Count of articles in the current filtered set that are not read/seen
+  let unreadFilteredCount = $derived.by(() => {
+    return filteredArticles.filter(
+      (a) => !readArticles[a.id] && !seenArticles[a.id],
+    ).length;
+  });
+
   onMount(() => {
     readArticles = getReadArticles();
     seenArticles = getSeenArticles();
-    hiddenFeeds = getHiddenFeeds();
+    // Default to home context for hidden feeds on the flat list; per-article
+    // filtering will use per-section contexts where appropriate.
+    hiddenFeeds = getHiddenFeedsForContext("home");
 
-    // Store initial state for filtering
+    // Snapshot the initial read/seen state for filtering (so items
+    // marked during this session are not hidden immediately).
     initialReadArticles = { ...readArticles };
     initialSeenArticles = { ...seenArticles };
 
@@ -157,11 +189,12 @@
     hideSeenArticles = prefs.hideSeenArticles;
     autoMarkAsSeen = prefs.autoMarkAsSeen;
 
-    // If articles will be hidden, scroll to top after a short delay to prevent auto-marking
+    // If articles will be hidden, and there is existing read/seen history,
+    // scroll to top after a short delay to prevent auto-marking on load
     if (
       hideSeenArticles &&
-      (Object.keys(initialReadArticles).length > 0 ||
-        Object.keys(initialSeenArticles).length > 0)
+      (Object.keys(readArticles).length > 0 ||
+        Object.keys(seenArticles).length > 0)
     ) {
       setTimeout(() => {
         window.scrollTo(0, 0);
@@ -193,7 +226,20 @@
     }) as EventListener);
 
     window.addEventListener("readHistoryCleared", () => {
-      readArticles = {};
+      // When the read history is cleared, reload storage and update
+      // the initial snapshots so previously-hidden articles reappear.
+      readArticles = getReadArticles();
+      seenArticles = getSeenArticles();
+      initialReadArticles = { ...readArticles };
+      initialSeenArticles = { ...seenArticles };
+    });
+
+    // On activity (markAsRead/markAsSeen) update live maps used for
+    // counts/UI but do NOT update the initial snapshots so articles
+    // are not hidden immediately.
+    window.addEventListener("noctua:activity", () => {
+      readArticles = getReadArticles();
+      seenArticles = getSeenArticles();
     });
 
     // Set up scroll detection for auto-marking as seen (with delay to prevent auto-marking on reload)
@@ -201,6 +247,21 @@
       setTimeout(() => {
         setupScrollDetection();
       }, 1000); // 1 second delay
+    }
+
+    // If the page initially has no filtered articles, scroll to the bottom
+    // so the always-present 'You're all caught up' area is visible.
+    if (filteredArticles.length === 0) {
+      setTimeout(() => {
+        try {
+          window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: "smooth",
+          });
+        } catch (e) {
+          window.scrollTo(0, document.body.scrollHeight);
+        }
+      }, 150);
     }
 
     return () => {
@@ -243,17 +304,6 @@
     {#each sections as section}
       {#if articlesBySection.has(section.id)}
         <section id="section-{section.id}" class="scroll-mt-24">
-          <!-- Section header - Only show if more than one section -->
-          {#if sections.length > 1}
-            <div class="flex items-center gap-3 mb-6">
-              <span class="text-3xl">{section.icon}</span>
-              <h2 class="text-2xl font-bold">{section.name}</h2>
-              <span class="badge badge-lg badge-ghost font-mono ml-auto">
-                {articlesBySection.get(section.id)?.length || 0}
-              </span>
-            </div>
-          {/if}
-
           <!-- Articles grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {#each articlesBySection.get(section.id) || [] as article}
@@ -291,16 +341,33 @@
     </div>
   {/if}
 
-  <!-- Empty state -->
-  {#if filteredArticles.length === 0}
+  <!-- Large 'All Caught Up' area always present after the list so users can scroll to it -->
+  <div class="min-h-screen mt-8 flex items-center justify-center">
     <div
-      class="text-center py-20 bg-base-200/50 rounded-3xl border border-dashed border-base-300"
+      class="text-center py-20 bg-base-200/50 rounded-3xl border border-dashed border-base-300 w-full max-w-3xl"
     >
-      <div class="text-6xl mb-4">🔍</div>
-      <h3 class="text-xl font-bold mb-2">No articles found</h3>
-      <p class="text-base-content/50">
-        Try adjusting your search or check your feed visibility settings.
+      <div class="text-6xl mb-4">✅</div>
+      <h3 class="text-2xl font-bold mb-2">You're all caught up</h3>
+      <p class="text-base-content/60 mb-6 px-16">
+        There are no articles to show right now — either you've already viewed
+        them, or your current filters hide some items.
       </p>
+      <div class="flex items-center justify-center gap-3">
+        <button
+          class="btn btn-primary"
+          onclick={() => {
+            try {
+              const url = new URL(window.location.href);
+              url.searchParams.set("_noctua_reload", String(Date.now()));
+              window.location.replace(url.toString());
+            } catch (e) {
+              window.location.reload();
+            }
+          }}
+        >
+          Reload Page
+        </button>
+      </div>
     </div>
-  {/if}
+  </div>
 </div>

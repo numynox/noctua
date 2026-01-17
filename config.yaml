@@ -11,7 +11,7 @@ settings:
     title: "Noctua News"
     description: "AI-curated news from your favorite sources"
     base_url: "/noctua"  # Change for GitHub Pages deployment
-    theme: "dark"  # default theme: light, dark, or auto
+    reset_time_minutes: 15  # If returning to the site after this time, refresh content
 
   # Global filtering rules (applied to all sections and feeds unless overridden)
   filter:

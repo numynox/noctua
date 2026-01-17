@@ -14,7 +14,7 @@ class WebsiteSettings(BaseModel):
     title: str = "Noctua News"
     description: str = "AI-curated news from your favorite sources"
     base_url: str = "/"
-    theme: str = "dark"
+    reset_time_minutes: int = 30
 
 
 class FilterConfig(BaseModel):

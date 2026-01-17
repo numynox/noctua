@@ -3,7 +3,10 @@
   import type { Section } from "../lib/data";
   import {
     getFilters,
-    getHiddenFeeds,
+    getHiddenFeedsForContext,
+    getPreferences,
+    getReadArticles,
+    getSeenArticles,
     setFilters,
     toggleFeedVisibility,
   } from "../lib/storage";
@@ -41,6 +44,11 @@
   let searchQuery = $state("");
   let isMobileMenuOpen = $state(false);
   let hiddenFeeds = $state<Set<string>>(new Set());
+  let hideSeenArticles = $state(true);
+  // simple counter to force re-render when localStorage-based data changes
+  let refresh = $state(0);
+  let readArticlesLocal: Record<string, any> = $state({});
+  let seenArticlesLocal: Record<string, any> = $state({});
 
   // Determine which feeds to show in the sidebar for the active section
   let currentFeeds = $derived.by(() => {
@@ -54,11 +62,39 @@
   onMount(() => {
     const filters = getFilters();
     searchQuery = filters.searchQuery || "";
-    hiddenFeeds = getHiddenFeeds();
+    hiddenFeeds = getHiddenFeedsForContext(activeId);
+    hideSeenArticles = getPreferences().hideSeenArticles;
+
+    // Keep local copies of read/seen maps so Svelte reactivity updates
+    // the template immediately when articles are marked read/seen.
+    readArticlesLocal = getReadArticles();
+    seenArticlesLocal = getSeenArticles();
+
+    window.addEventListener("readHistoryCleared", () => {
+      readArticlesLocal = getReadArticles();
+      seenArticlesLocal = getSeenArticles();
+      refresh = refresh + 1; // fallback to ensure re-render
+    });
+
+    window.addEventListener("seenHistoryCleared", () => {
+      seenArticlesLocal = getSeenArticles();
+      refresh = refresh + 1;
+    });
+
+    window.addEventListener("noctua:activity", () => {
+      // Update local maps so counts reflect immediately
+      readArticlesLocal = getReadArticles();
+      seenArticlesLocal = getSeenArticles();
+    });
 
     // Listen for search changes from other components
     window.addEventListener("filtersChanged", ((e: CustomEvent) => {
       searchQuery = e.detail.searchQuery;
+    }) as EventListener);
+
+    // Update preferences live
+    window.addEventListener("preferencesChanged", ((e: CustomEvent) => {
+      hideSeenArticles = e.detail.hideSeenArticles;
     }) as EventListener);
   });
 
@@ -72,11 +108,20 @@
   }
 
   function toggleFeed(feedId: string) {
-    toggleFeedVisibility(feedId);
-    hiddenFeeds = getHiddenFeeds();
+    toggleFeedVisibility(feedId, activeId);
+    hiddenFeeds = getHiddenFeedsForContext(activeId);
     window.dispatchEvent(
       new CustomEvent("feedsChanged", { detail: { hiddenFeeds } }),
     );
+  }
+
+  function feedVisibleCount(feed: any) {
+    // Always compute the count of "unseen/unread" articles so the
+    // sidebar reflects the number of items the user hasn't read yet.
+    const read = readArticlesLocal || {};
+    const seen = seenArticlesLocal || {};
+    return feed.articles.filter((a: any) => !(a.id in read) && !(a.id in seen))
+      .length;
   }
 
   function toggleMobileMenu() {
@@ -117,6 +162,7 @@
 
 <!-- Sidebar Container -->
 <aside
+  data-refresh={refresh}
   class="fixed lg:sticky top-0 left-0 z-40 w-80 h-screen bg-base-200 border-r border-base-300 transform transition-transform duration-300 ease-in-out flex flex-col
     {isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}"
 >
@@ -187,7 +233,7 @@
                   {feed.name}
                 </span>
                 <span class="text-[10px] opacity-40 font-mono">
-                  {feed.articles.length}
+                  {feedVisibleCount(feed)}
                 </span>
               </label>
             {/each}
@@ -229,7 +275,7 @@
                     {feed.name}
                   </span>
                   <span class="text-[10px] opacity-40 font-mono">
-                    {feed.articles.length}
+                    {feedVisibleCount(feed)}
                   </span>
                 </label>
               {/each}

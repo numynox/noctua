@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import {
     clearReadHistory,
+    clearSeenHistory,
     getPreferences,
     getTheme,
     setPreferences,
@@ -81,9 +82,12 @@
         "Are you sure you want to clear your read article history? This cannot be undone.",
       )
     ) {
+      // Clear both read and seen history so hidden articles reappear.
+      // `storage.ts` dispatches the appropriate events, so no need to
+      // dispatch them here.
       clearReadHistory();
-      window.dispatchEvent(new CustomEvent("readHistoryCleared"));
-      alert("Read history cleared.");
+      clearSeenHistory();
+      alert("Read and seen history cleared.");
     }
   }
 </script>
