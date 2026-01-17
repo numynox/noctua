@@ -3,6 +3,9 @@
  * These are used client-side only (in Svelte components)
  */
 
+// Check if running in browser environment
+const isBrowser = (): boolean => typeof window !== "undefined";
+
 // Storage keys
 const STORAGE_KEYS = {
   THEME: "noctua_theme",
@@ -17,11 +20,10 @@ const STORAGE_KEYS = {
  * User preferences stored in local storage
  */
 export interface UserPreferences {
-  theme: string; // "auto" or any daisyUI theme name
   compactView: boolean;
   showSummaries: boolean;
-  hideSeenArticles: boolean; // Renamed from showReadArticles
-  autoMarkAsSeen: boolean; // New setting
+  hideSeenArticles: boolean;
+  autoMarkAsSeen: boolean;
 }
 
 /**
@@ -46,11 +48,10 @@ export interface FilterSettings {
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
-  theme: "auto",
   compactView: false,
   showSummaries: true,
-  hideSeenArticles: true, // Renamed from showReadArticles
-  autoMarkAsSeen: true, // New setting
+  hideSeenArticles: true,
+  autoMarkAsSeen: true,
 };
 
 const DEFAULT_FILTERS: FilterSettings = {
@@ -58,11 +59,62 @@ const DEFAULT_FILTERS: FilterSettings = {
 };
 
 /**
- * Check if we're in browser environment
+ * Migrate old localStorage data to new format
  */
-function isBrowser(): boolean {
-  return typeof window !== "undefined" && typeof localStorage !== "undefined";
+function migrateLocalStorage(): void {
+  if (!isBrowser()) return;
+
+  try {
+    // Migrate theme from preferences to separate key
+    const oldPrefs = localStorage.getItem(STORAGE_KEYS.PREFERENCES);
+    if (oldPrefs) {
+      const prefs = JSON.parse(oldPrefs);
+      if (prefs.theme && prefs.theme !== "auto") {
+        setTheme(prefs.theme);
+      }
+      // Remove old theme from preferences
+      delete prefs.theme;
+      // Rename showReadArticles to hideSeenArticles (invert logic)
+      if (prefs.showReadArticles !== undefined) {
+        prefs.hideSeenArticles = !prefs.showReadArticles;
+        delete prefs.showReadArticles;
+      }
+      // Save cleaned preferences
+      localStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(prefs));
+    }
+
+    // Clean up old filter data
+    const oldFilters = localStorage.getItem(STORAGE_KEYS.FILTERS);
+    if (oldFilters) {
+      const filters = JSON.parse(oldFilters);
+      // Remove old fields
+      delete filters.selectedSections;
+      delete filters.selectedFeeds;
+      delete filters.dateRange;
+      // Keep only searchQuery
+      const cleanedFilters = {
+        searchQuery: filters.searchQuery || "",
+      };
+      localStorage.setItem(
+        STORAGE_KEYS.FILTERS,
+        JSON.stringify(cleanedFilters),
+      );
+    }
+
+    // Remove any other old keys if they exist
+    const oldKeys = [
+      "noctua_hidden_sections", // This was replaced by hidden feeds logic
+    ];
+    oldKeys.forEach((key) => {
+      localStorage.removeItem(key);
+    });
+  } catch (error) {
+    console.warn("Error during localStorage migration:", error);
+  }
 }
+
+// Run migration on module load
+migrateLocalStorage();
 
 /**
  * Get item from local storage with fallback
@@ -93,11 +145,11 @@ function setStorageItem<T>(key: string, value: T): void {
 
 // ============ Theme ============
 
-export function getTheme(): UserPreferences["theme"] {
+export function getTheme(): string {
   return getStorageItem(STORAGE_KEYS.THEME, "auto");
 }
 
-export function setTheme(theme: UserPreferences["theme"]): void {
+export function setTheme(theme: string): void {
   setStorageItem(STORAGE_KEYS.THEME, theme);
   applyTheme(theme);
 }
