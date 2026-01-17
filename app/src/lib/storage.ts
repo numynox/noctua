@@ -177,6 +177,15 @@ export function markAsRead(articleId: string): void {
   const read = getReadArticles();
   read[articleId] = { timestamp: new Date().toISOString() };
   setStorageItem(STORAGE_KEYS.READ_ARTICLES, read);
+  // Notify any listeners (e.g., auto-refresh timer) that the user performed
+  // activity related to reading an article so timers can be reset.
+  try {
+    if (isBrowser()) {
+      window.dispatchEvent(new CustomEvent("noctua:activity"));
+    }
+  } catch (e) {
+    // ignore
+  }
 }
 
 export function markAsUnread(articleId: string): void {
@@ -209,6 +218,14 @@ export function markAsSeen(articleId: string): void {
   const seen = getSeenArticles();
   seen[articleId] = { timestamp: new Date().toISOString() };
   setStorageItem(STORAGE_KEYS.SEEN_ARTICLES, seen);
+  // Also notify activity listeners when an article is marked as seen.
+  try {
+    if (isBrowser()) {
+      window.dispatchEvent(new CustomEvent("noctua:activity"));
+    }
+  } catch (e) {
+    // ignore
+  }
 }
 
 export function isArticleSeen(articleId: string): boolean {
