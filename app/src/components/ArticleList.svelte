@@ -28,7 +28,11 @@
   let hideSeenArticles = $state(true);
   let autoMarkAsSeen = $state(true);
 
-  // Store initial read/seen state for filtering
+  // Snapshot of read/seen state at page load. We use these snapshots
+  // for filtering so articles marked as seen/read during the current
+  // session are not immediately hidden — they will be hidden after
+  // a page refresh. Live `readArticles`/`seenArticles` are still used
+  // for counts and UI state.
   let initialReadArticles = $state<ArticleStatuses>({});
   let initialSeenArticles = $state<ArticleStatuses>({});
 
@@ -107,7 +111,7 @@
       });
     }
 
-    // Filter by read/seen status (only hide articles that were read/seen at page load)
+    // Filter by read/seen status (hide articles that were read/seen at page load)
     if (hideSeenArticles) {
       result = result.filter(
         (a) => !initialReadArticles[a.id] && !initialSeenArticles[a.id],
@@ -146,7 +150,8 @@
     seenArticles = getSeenArticles();
     hiddenFeeds = getHiddenFeeds();
 
-    // Store initial state for filtering
+    // Snapshot the initial read/seen state for filtering (so items
+    // marked during this session are not hidden immediately).
     initialReadArticles = { ...readArticles };
     initialSeenArticles = { ...seenArticles };
 
@@ -157,11 +162,12 @@
     hideSeenArticles = prefs.hideSeenArticles;
     autoMarkAsSeen = prefs.autoMarkAsSeen;
 
-    // If articles will be hidden, scroll to top after a short delay to prevent auto-marking
+    // If articles will be hidden, and there is existing read/seen history,
+    // scroll to top after a short delay to prevent auto-marking on load
     if (
       hideSeenArticles &&
-      (Object.keys(initialReadArticles).length > 0 ||
-        Object.keys(initialSeenArticles).length > 0)
+      (Object.keys(readArticles).length > 0 ||
+        Object.keys(seenArticles).length > 0)
     ) {
       setTimeout(() => {
         window.scrollTo(0, 0);
@@ -193,7 +199,20 @@
     }) as EventListener);
 
     window.addEventListener("readHistoryCleared", () => {
-      readArticles = {};
+      // When the read history is cleared, reload storage and update
+      // the initial snapshots so previously-hidden articles reappear.
+      readArticles = getReadArticles();
+      seenArticles = getSeenArticles();
+      initialReadArticles = { ...readArticles };
+      initialSeenArticles = { ...seenArticles };
+    });
+
+    // On activity (markAsRead/markAsSeen) update live maps used for
+    // counts/UI but do NOT update the initial snapshots so articles
+    // are not hidden immediately.
+    window.addEventListener("noctua:activity", () => {
+      readArticles = getReadArticles();
+      seenArticles = getSeenArticles();
     });
 
     // Set up scroll detection for auto-marking as seen (with delay to prevent auto-marking on reload)
@@ -243,17 +262,6 @@
     {#each sections as section}
       {#if articlesBySection.has(section.id)}
         <section id="section-{section.id}" class="scroll-mt-24">
-          <!-- Section header - Only show if more than one section -->
-          {#if sections.length > 1}
-            <div class="flex items-center gap-3 mb-6">
-              <span class="text-3xl">{section.icon}</span>
-              <h2 class="text-2xl font-bold">{section.name}</h2>
-              <span class="badge badge-lg badge-ghost font-mono ml-auto">
-                {articlesBySection.get(section.id)?.length || 0}
-              </span>
-            </div>
-          {/if}
-
           <!-- Articles grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {#each articlesBySection.get(section.id) || [] as article}

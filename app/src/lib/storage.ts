@@ -205,7 +205,21 @@ export function getArticleReadTimestamp(articleId: string): string | null {
 }
 
 export function clearReadHistory(): void {
-  setStorageItem(STORAGE_KEYS.READ_ARTICLES, {});
+  if (!isBrowser()) return;
+  try {
+    localStorage.removeItem(STORAGE_KEYS.READ_ARTICLES);
+  } catch (e) {
+    // fallback to setting empty object
+    setStorageItem(STORAGE_KEYS.READ_ARTICLES, {});
+  }
+  try {
+    if (isBrowser()) {
+      window.dispatchEvent(new CustomEvent("readHistoryCleared"));
+      window.dispatchEvent(new CustomEvent("noctua:activity"));
+    }
+  } catch (e) {
+    // ignore
+  }
 }
 
 // ============ Seen Articles ============
@@ -239,7 +253,20 @@ export function getArticleSeenTimestamp(articleId: string): string | null {
 }
 
 export function clearSeenHistory(): void {
-  setStorageItem(STORAGE_KEYS.SEEN_ARTICLES, {});
+  if (!isBrowser()) return;
+  try {
+    localStorage.removeItem(STORAGE_KEYS.SEEN_ARTICLES);
+  } catch (e) {
+    setStorageItem(STORAGE_KEYS.SEEN_ARTICLES, {});
+  }
+  try {
+    if (isBrowser()) {
+      window.dispatchEvent(new CustomEvent("seenHistoryCleared"));
+      window.dispatchEvent(new CustomEvent("noctua:activity"));
+    }
+  } catch (e) {
+    // ignore
+  }
 }
 
 // ============ Hidden Feeds ============
