@@ -9,8 +9,8 @@
     "app"
   ],
   "scripts": {
-    "download": "cd workflow/download && uv run main.py",
-    "filter": "cd workflow/filter && uv run main.py",
+    "download": "uv run python -m workflow.download.main",
+    "filter": "uv run python -m workflow.filter.main",
     "summarize": "cd workflow/summarize && node index.js",
     "build:website": "cd app && npm run build",
     "dev:website": "cd app && npm run dev",
