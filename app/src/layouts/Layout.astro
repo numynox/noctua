@@ -30,14 +30,6 @@ const siteTitle = "Noctua News";
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="/src/styles/app.css" />
 
@@ -46,7 +38,7 @@ const siteTitle = "Noctua News";
       (function () {
         const theme = localStorage.getItem("noctua_theme");
         const prefersDark = window.matchMedia(
-          "(prefers-color-scheme: dark)"
+          "(prefers-color-scheme: dark)",
         ).matches;
 
         let actualTheme = "dark";
@@ -59,7 +51,7 @@ const siteTitle = "Noctua News";
         document.documentElement.setAttribute("data-theme", actualTheme);
         document.documentElement.classList.toggle(
           "dark",
-          actualTheme === "dark"
+          actualTheme === "dark",
         );
       })();
     </script>
