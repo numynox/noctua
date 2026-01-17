@@ -14,7 +14,6 @@ class WebsiteSettings(BaseModel):
     title: str = "Noctua News"
     description: str = "AI-curated news from your favorite sources"
     base_url: str = "/"
-    theme: str = "dark"
 
 
 class FilterConfig(BaseModel):
