@@ -1,0 +1,22 @@
+---
+import ArticleList from "../components/ArticleList.svelte";
+import SummaryBox from "../components/SummaryBox.svelte";
+import Layout from "../layouts/Layout.astro";
+import { getAllArticles, loadFeedData } from "../lib/data";
+
+const data = loadFeedData();
+const allArticles = getAllArticles(data);
+---
+
+<Layout title="Home" activeId="home">
+  <!-- Overall Summary -->
+  <SummaryBox summary={data.overall_summary} icon="🦉" />
+
+  <!-- Articles List -->
+  <ArticleList
+    articles={allArticles}
+    sections={data.sections}
+    groupBySection={false}
+    client:load
+  />
+</Layout>

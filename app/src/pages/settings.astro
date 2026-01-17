@@ -1,0 +1,15 @@
+---
+import Layout from "../layouts/Layout.astro";
+import SettingsPanel from "../components/SettingsPanel.svelte";
+---
+
+<Layout title="Settings" activeId="settings">
+  <div class="mb-10 text-center max-w-2xl mx-auto">
+    <h1 class="text-4xl font-bold mb-4">Settings</h1>
+    <p class="text-base-content/60">
+      Customize your reading experience and manage your data.
+    </p>
+  </div>
+
+  <SettingsPanel client:load />
+</Layout>

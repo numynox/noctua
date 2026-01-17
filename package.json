@@ -1,0 +1,33 @@
+{
+  "name": "noctua",
+  "version": "0.1.0",
+  "description": "AI-powered RSS feed aggregator with intelligent summarization",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "workflow/summarize",
+    "app"
+  ],
+  "scripts": {
+    "download": "uv run python -m workflow.download.main",
+    "filter": "uv run python -m workflow.filter.main",
+    "summarize": "cd workflow/summarize && node index.js",
+    "build:website": "cd app && npm run build",
+    "dev:website": "cd app && npm run dev",
+    "preview:website": "cd app && npm run preview",
+    "workflow:all": "npm run download && npm run filter && npm run summarize && npm run build:website",
+    "install:all": "npm install && cd app && npm install && cd ../workflow/summarize && npm install"
+  },
+  "keywords": [
+    "rss",
+    "feed",
+    "aggregator",
+    "ai",
+    "summarization",
+    "astro"
+  ],
+  "license": "AGPL-3.0-only",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

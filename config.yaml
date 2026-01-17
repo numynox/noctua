@@ -1,0 +1,99 @@
+# Noctua RSS Feed Configuration
+# This file is used by all steps in the pipeline
+
+# Global settings
+settings:
+  # Output directory base path (relative to project root)
+  output_base: "output"
+
+  # Website generation settings
+  website:
+    title: "Noctua News"
+    description: "AI-curated news from your favorite sources"
+    base_url: "/"  # Change for GitHub Pages deployment
+    theme: "dark"  # default theme: light, dark, or auto
+
+  # Global filtering rules (applied to all sections and feeds unless overridden)
+  filter:
+    # Maximum article age in hours (filter out very old articles)
+    max_age_hours: 200
+    
+    # Keywords to exclude (case-insensitive, checked in title and summary)
+    exclude_keywords:
+      - "sponsored"
+      - "advertisement"
+      - "promoted"
+    
+    # Keywords that must be present (if specified, at least one must match)
+    require_keywords: []
+
+    # Remove duplicates based on title and URL
+    deduplicate: true
+
+# Feed sections - group related feeds together
+sections:
+  technology:
+    name: "Technology"
+    description: "Tech news and updates"
+    icon: "💻"
+    enabled: true
+    feeds:
+      - name: "Heise"
+        url: "https://www.heise.de/rss/heise-atom.xml"
+        enabled: true
+        filter:
+          exclude_keywords:
+            - "heise+"
+      - name: "OMG Ubuntu"
+        url: "https://omgubuntu.co.uk/feed"
+        enabled: true
+
+  news:
+    name: "News"
+    description: "Global news and current events"
+    icon: "🌍"
+    enabled: true
+    feeds:
+      - name: "Tagesschau Startseite"
+        url: "https://www.tagesschau.de/index~rss2.xml"
+        enabled: false
+      - name: "Tagesschau Meldungen"
+        url: "https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml"
+        enabled: true
+      - name: "Tagesschau Investigativ"
+        url: "https://www.tagesschau.de/investigativ/index~rss2.xml"
+        enabled: true
+        filter:
+          max_age_hours: 400
+
+# AI Summarization settings
+summarization:
+  # Model to use with Gemini (1.5-flash is most cost-effective for summarization)
+  model: "gemma-3-27b-it"
+  
+  # Language for the generated summaries (e.g. English or German)
+  output_language: "German"
+  
+  # Number of most recent articles to analyze together per section
+  articles_per_section_summary: 30
+  
+  # Maximum articles for overall summary
+  max_articles_overall: 50
+  
+  # Prompts for summarization
+  prompts:
+    section: |
+      You are analyzing the following recent news articles.
+      Create a concise summary (at most 2 sentences and 50 words) that
+      1. Identifies the most important stories
+      2. Highlights significant developments and trends connecting the stories
+      Present your answer as a single paragraph and as if it was written by a human journalist on the front page of a newspaper.
+      3. Leave out any articles that are not impactful.
+    
+    overall: |
+      You are analyzing recent news articles.
+      Create a concise summary (at most 4 sentences and 70 words) that
+      1. Identifies the most important stories in each news section
+      2. Highlights significant developments and trends connecting the stories
+      Present your answer as a single paragraph and as if it was written by a human journalist on the front page of a newspaper.
+      3. Leave out any articles that are not impactful.

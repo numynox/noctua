@@ -1,0 +1,131 @@
+---
+import Sidebar from "../components/Sidebar.svelte";
+import { loadFeedData } from "../lib/data";
+
+interface Props {
+  title: string;
+  description?: string;
+  activeId?: string;
+}
+
+const {
+  title,
+  description = "AI-curated news from your favorite sources",
+  activeId,
+} = Astro.props;
+const data = loadFeedData();
+const siteTitle = "Noctua News";
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title} | {siteTitle}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Tailwind CSS -->
+    <link rel="stylesheet" href="/src/styles/app.css" />
+
+    <!-- Theme initialization script (prevents flash) -->
+    <script is:inline>
+      (function () {
+        const theme = localStorage.getItem("noctua_theme");
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+
+        let actualTheme = "dark";
+        if (theme && theme !== '"auto"') {
+          actualTheme = JSON.parse(theme);
+        } else if (!prefersDark) {
+          actualTheme = "light";
+        }
+
+        document.documentElement.setAttribute("data-theme", actualTheme);
+        document.documentElement.classList.toggle(
+          "dark",
+          actualTheme === "dark",
+        );
+      })();
+    </script>
+  </head>
+  <body class="bg-base-100 text-base-content overflow-x-hidden">
+    <div class="flex min-h-screen">
+      <!-- Sidebar -->
+      <Sidebar
+        sections={data.sections}
+        activeId={activeId}
+        processedAt={data.processed_at}
+        client:load
+      />
+
+      <!-- Main Content Area -->
+      <div class="flex-1 flex flex-col min-w-0">
+        <!-- Page Content -->
+        <main class="flex-1 p-6 lg:p-8">
+          <slot />
+        </main>
+
+        <!-- Footer -->
+        <footer
+          class="p-8 border-t border-base-300 text-center opacity-40 text-sm"
+        >
+          <p>Built with 🦉 Noctua — AI-powered RSS aggregator</p>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>
+
+<style is:global>
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: oklch(var(--bc) / 0.2);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(var(--bc) / 0.3);
+  }
+
+  /* Smooth transitions for theme changes */
+  html {
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  /* Article card hover effects */
+  .article-card {
+    transition: all 0.2s ease;
+  }
+
+  .article-card:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Read article styling */
+  .article-read {
+    opacity: 0.6;
+  }
+
+  .article-read:hover {
+    opacity: 1;
+  }
+</style>
