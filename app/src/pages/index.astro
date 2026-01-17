@@ -10,7 +10,7 @@ const allArticles = getAllArticles(data);
 
 <Layout title="Home" activeId="home">
   <!-- Overall Summary -->
-  <SummaryBox summary={data.overall_summary} icon="🦉" />
+  <SummaryBox summary={data.overall_summary} icon="🦉" client:load />
 
   <!-- Articles List -->
   <ArticleList

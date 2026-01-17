@@ -145,6 +145,13 @@
     return grouped;
   });
 
+  // Count of articles in the current filtered set that are not read/seen
+  let unreadFilteredCount = $derived.by(() => {
+    return filteredArticles.filter(
+      (a) => !readArticles[a.id] && !seenArticles[a.id],
+    ).length;
+  });
+
   onMount(() => {
     readArticles = getReadArticles();
     seenArticles = getSeenArticles();
@@ -220,6 +227,21 @@
       setTimeout(() => {
         setupScrollDetection();
       }, 1000); // 1 second delay
+    }
+
+    // If the page initially has no filtered articles, scroll to the bottom
+    // so the always-present 'You're all caught up' area is visible.
+    if (filteredArticles.length === 0) {
+      setTimeout(() => {
+        try {
+          window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: "smooth",
+          });
+        } catch (e) {
+          window.scrollTo(0, document.body.scrollHeight);
+        }
+      }, 150);
     }
 
     return () => {
@@ -299,16 +321,33 @@
     </div>
   {/if}
 
-  <!-- Empty state -->
-  {#if filteredArticles.length === 0}
+  <!-- Large 'All Caught Up' area always present after the list so users can scroll to it -->
+  <div class="min-h-screen mt-8 flex items-center justify-center">
     <div
-      class="text-center py-20 bg-base-200/50 rounded-3xl border border-dashed border-base-300"
+      class="text-center py-20 bg-base-200/50 rounded-3xl border border-dashed border-base-300 w-full max-w-3xl"
     >
-      <div class="text-6xl mb-4">🔍</div>
-      <h3 class="text-xl font-bold mb-2">No articles found</h3>
-      <p class="text-base-content/50">
-        Try adjusting your search or check your feed visibility settings.
+      <div class="text-6xl mb-4">✅</div>
+      <h3 class="text-2xl font-bold mb-2">You're all caught up</h3>
+      <p class="text-base-content/60 mb-6 px-16">
+        There are no articles to show right now — either you've already viewed
+        them, or your current filters hide some items.
       </p>
+      <div class="flex items-center justify-center gap-3">
+        <button
+          class="btn btn-primary"
+          onclick={() => {
+            try {
+              const url = new URL(window.location.href);
+              url.searchParams.set("_noctua_reload", String(Date.now()));
+              window.location.replace(url.toString());
+            } catch (e) {
+              window.location.reload();
+            }
+          }}
+        >
+          Reload Page
+        </button>
+      </div>
     </div>
-  {/if}
+  </div>
 </div>
