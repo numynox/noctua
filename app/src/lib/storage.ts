@@ -7,6 +7,7 @@
 const STORAGE_KEYS = {
   THEME: "noctua_theme",
   READ_ARTICLES: "noctua_read_articles",
+  SEEN_ARTICLES: "noctua_seen_articles",
   HIDDEN_FEEDS: "noctua_hidden_feeds",
   FILTERS: "noctua_filters",
   PREFERENCES: "noctua_preferences",
@@ -19,7 +20,22 @@ export interface UserPreferences {
   theme: string; // "auto" or any daisyUI theme name
   compactView: boolean;
   showSummaries: boolean;
-  showReadArticles: boolean;
+  hideSeenArticles: boolean; // Renamed from showReadArticles
+  autoMarkAsSeen: boolean; // New setting
+}
+
+/**
+ * Article status with timestamp
+ */
+export interface ArticleStatus {
+  timestamp: string; // ISO string
+}
+
+/**
+ * Article statuses stored in local storage
+ */
+export interface ArticleStatuses {
+  [articleId: string]: ArticleStatus;
 }
 
 /**
@@ -33,7 +49,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   theme: "auto",
   compactView: false,
   showSummaries: true,
-  showReadArticles: true,
+  hideSeenArticles: true, // Renamed from showReadArticles
+  autoMarkAsSeen: true, // New setting
 };
 
 const DEFAULT_FILTERS: FilterSettings = {
@@ -104,29 +121,60 @@ export function applyTheme(theme: string): void {
 
 // ============ Read Articles ============
 
-export function getReadArticles(): Set<string> {
-  const articles = getStorageItem<string[]>(STORAGE_KEYS.READ_ARTICLES, []);
-  return new Set(articles);
+export function getReadArticles(): ArticleStatuses {
+  return getStorageItem(STORAGE_KEYS.READ_ARTICLES, {});
 }
 
 export function markAsRead(articleId: string): void {
   const read = getReadArticles();
-  read.add(articleId);
-  setStorageItem(STORAGE_KEYS.READ_ARTICLES, Array.from(read));
+  read[articleId] = { timestamp: new Date().toISOString() };
+  setStorageItem(STORAGE_KEYS.READ_ARTICLES, read);
 }
 
 export function markAsUnread(articleId: string): void {
   const read = getReadArticles();
-  read.delete(articleId);
-  setStorageItem(STORAGE_KEYS.READ_ARTICLES, Array.from(read));
+  delete read[articleId];
+  setStorageItem(STORAGE_KEYS.READ_ARTICLES, read);
 }
 
 export function isArticleRead(articleId: string): boolean {
-  return getReadArticles().has(articleId);
+  const read = getReadArticles();
+  return articleId in read;
+}
+
+export function getArticleReadTimestamp(articleId: string): string | null {
+  const read = getReadArticles();
+  return read[articleId]?.timestamp || null;
 }
 
 export function clearReadHistory(): void {
-  setStorageItem(STORAGE_KEYS.READ_ARTICLES, []);
+  setStorageItem(STORAGE_KEYS.READ_ARTICLES, {});
+}
+
+// ============ Seen Articles ============
+
+export function getSeenArticles(): ArticleStatuses {
+  return getStorageItem(STORAGE_KEYS.SEEN_ARTICLES, {});
+}
+
+export function markAsSeen(articleId: string): void {
+  const seen = getSeenArticles();
+  seen[articleId] = { timestamp: new Date().toISOString() };
+  setStorageItem(STORAGE_KEYS.SEEN_ARTICLES, seen);
+}
+
+export function isArticleSeen(articleId: string): boolean {
+  const seen = getSeenArticles();
+  return articleId in seen;
+}
+
+export function getArticleSeenTimestamp(articleId: string): string | null {
+  const seen = getSeenArticles();
+  return seen[articleId]?.timestamp || null;
+}
+
+export function clearSeenHistory(): void {
+  setStorageItem(STORAGE_KEYS.SEEN_ARTICLES, {});
 }
 
 // ============ Hidden Feeds ============

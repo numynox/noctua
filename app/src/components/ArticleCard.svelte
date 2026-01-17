@@ -4,11 +4,20 @@
   interface Props {
     article: Article;
     isRead: boolean;
+    isSeen: boolean;
+    readTimestamp: string | null;
     compactView: boolean;
     onArticleClick: () => void;
   }
 
-  let { article, isRead, compactView, onArticleClick }: Props = $props();
+  let {
+    article,
+    isRead,
+    isSeen,
+    readTimestamp,
+    compactView,
+    onArticleClick,
+  }: Props = $props();
 
   function formatDate(dateStr: string | null): string {
     if (!dateStr) return "";
@@ -29,6 +38,28 @@
     });
   }
 
+  function formatReadTimestamp(timestamp: string | null): string {
+    if (!timestamp || !isRead) return "";
+
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffDays === 0) return "Read today";
+    if (diffDays === 1) return "Read yesterday";
+    if (diffDays < 7) return `Read ${diffDays} days ago`;
+    if (diffHours < 24 * 30)
+      return `Read ${Math.floor(diffHours / 24)} days ago`;
+
+    return `Read ${date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })}`;
+  }
+
   function handleImageError(e: Event) {
     const target = e.target as HTMLImageElement;
     if (target) {
@@ -36,15 +67,18 @@
     }
   }
 
-  function handleClick() {
+  function handleClick(event: Event) {
+    event.preventDefault();
     onArticleClick();
+    // Navigate after marking as read
+    window.open(article.url, "_blank", "noopener,noreferrer");
   }
 </script>
 
 <article
   class="card bg-base-200 article-card"
   class:article-read={isRead}
-  class:card-sm={compactView}
+  class:article-seen={isSeen}
 >
   <div class="card-body" class:p-3={compactView} class:p-4={!compactView}>
     <!-- Header -->
@@ -59,9 +93,6 @@
           onclick={handleClick}
         >
           {article.title}
-          {#if isRead}
-            <span class="badge badge-ghost badge-sm">Read</span>
-          {/if}
         </a>
 
         <div class="flex items-center gap-2 text-xs text-base-content/60 mt-1">
@@ -110,7 +141,17 @@
     {/if}
 
     <!-- Actions -->
-    <div class="card-actions justify-end mt-2">
+    <div class="flex items-center justify-between mt-2">
+      <!-- Read timestamp (only for read articles) -->
+      {#if readTimestamp}
+        <div class="text-xs text-base-content/50">
+          {formatReadTimestamp(readTimestamp)}
+        </div>
+      {:else}
+        <!-- Placeholder to maintain consistent height -->
+        <div class="text-xs opacity-0">Read today</div>
+      {/if}
+
       <a
         href={article.url}
         target="_blank"
@@ -130,5 +171,15 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .article-read {
+    opacity: 0.6;
+    filter: grayscale(0.3);
+  }
+
+  .article-seen {
+    opacity: 0.6;
+    filter: grayscale(0.2);
   }
 </style>

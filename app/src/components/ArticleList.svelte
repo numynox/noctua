@@ -1,12 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { Article, Section } from "../lib/data";
+  import type { ArticleStatuses } from "../lib/storage";
   import {
     getFilters,
     getHiddenFeeds,
     getPreferences,
     getReadArticles,
+    getSeenArticles,
     markAsRead,
+    markAsSeen,
   } from "../lib/storage";
   import ArticleCard from "./ArticleCard.svelte";
 
@@ -18,11 +21,79 @@
 
   let { articles, sections, groupBySection = true }: Props = $props();
 
-  let readArticles = $state<Set<string>>(new Set());
+  let readArticles = $state<ArticleStatuses>({});
+  let seenArticles = $state<ArticleStatuses>({});
   let hiddenFeeds = $state<Set<string>>(new Set());
   let searchQuery = $state("");
-  let showReadArticles = $state(true);
+  let hideSeenArticles = $state(true);
+  let autoMarkAsSeen = $state(true);
   let compactView = $state(false);
+
+  // Store initial read/seen state for filtering
+  let initialReadArticles = $state<ArticleStatuses>({});
+  let initialSeenArticles = $state<ArticleStatuses>({});
+
+  // Intersection observer to mark articles as seen
+  let observer: IntersectionObserver | null = null;
+  let scrollHandler: (() => void) | null = null;
+  let hasUserScrolled = false;
+
+  function setupScrollDetection() {
+    if (scrollHandler) {
+      window.removeEventListener("scroll", scrollHandler);
+    }
+
+    scrollHandler = () => {
+      // Mark that user has scrolled
+      hasUserScrolled = true;
+
+      // Check all article elements that are currently rendered
+      const articleElements = document.querySelectorAll("[data-article-id]");
+      articleElements.forEach((element) => {
+        const rect = element.getBoundingClientRect();
+        const articleId = element.getAttribute("data-article-id");
+
+        // Mark as seen if article is above viewport (scrolled past) and not already marked
+        if (
+          rect.bottom < 0 &&
+          articleId &&
+          !readArticles[articleId] &&
+          !seenArticles[articleId]
+        ) {
+          markAsSeen(articleId);
+          seenArticles = getSeenArticles();
+        }
+      });
+    };
+
+    window.addEventListener("scroll", scrollHandler, { passive: true });
+  }
+
+  function setupObserver() {
+    if (observer) observer.disconnect();
+    observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // Mark as seen when article completely leaves the viewport (scrolled past)
+          if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
+            const articleId = entry.target.getAttribute("data-article-id");
+            if (
+              articleId &&
+              !readArticles[articleId] &&
+              !seenArticles[articleId]
+            ) {
+              markAsSeen(articleId);
+              seenArticles = getSeenArticles();
+            }
+          }
+        });
+      },
+      {
+        threshold: 0, // Trigger when element completely enters/leaves viewport
+        rootMargin: "0px",
+      },
+    );
+  }
 
   // Filtered articles
   let filteredArticles = $derived.by(() => {
@@ -37,9 +108,11 @@
       });
     }
 
-    // Filter by read status
-    if (!showReadArticles) {
-      result = result.filter((a) => !readArticles.has(a.id));
+    // Filter by read/seen status (only hide articles that were read/seen at page load)
+    if (hideSeenArticles) {
+      result = result.filter(
+        (a) => !initialReadArticles[a.id] && !initialSeenArticles[a.id],
+      );
     }
 
     // Filter by search query
@@ -49,7 +122,7 @@
         (a) =>
           a.title.toLowerCase().includes(query) ||
           a.summary?.toLowerCase().includes(query) ||
-          a.feed_name.toLowerCase().includes(query)
+          a.feed_name.toLowerCase().includes(query),
       );
     }
 
@@ -71,14 +144,31 @@
 
   onMount(() => {
     readArticles = getReadArticles();
+    seenArticles = getSeenArticles();
     hiddenFeeds = getHiddenFeeds();
+
+    // Store initial state for filtering
+    initialReadArticles = { ...readArticles };
+    initialSeenArticles = { ...seenArticles };
 
     const filters = getFilters();
     const prefs = getPreferences();
 
     searchQuery = filters.searchQuery;
-    showReadArticles = prefs.showReadArticles;
+    hideSeenArticles = prefs.hideSeenArticles;
+    autoMarkAsSeen = prefs.autoMarkAsSeen;
     compactView = prefs.compactView;
+
+    // If articles will be hidden, scroll to top after a short delay to prevent auto-marking
+    if (
+      hideSeenArticles &&
+      (Object.keys(initialReadArticles).length > 0 ||
+        Object.keys(initialSeenArticles).length > 0)
+    ) {
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
+    }
 
     // Listen for filter changes
     window.addEventListener("filtersChanged", ((e: CustomEvent) => {
@@ -86,8 +176,19 @@
     }) as EventListener);
 
     window.addEventListener("preferencesChanged", ((e: CustomEvent) => {
-      showReadArticles = e.detail.showReadArticles;
+      hideSeenArticles = e.detail.hideSeenArticles;
+      autoMarkAsSeen = e.detail.autoMarkAsSeen;
       compactView = e.detail.compactView;
+
+      // Update scroll detection when autoMarkAsSeen changes
+      if (autoMarkAsSeen && !scrollHandler) {
+        setTimeout(() => {
+          setupScrollDetection();
+        }, 1000);
+      } else if (!autoMarkAsSeen && scrollHandler) {
+        window.removeEventListener("scroll", scrollHandler);
+        scrollHandler = null;
+      }
     }) as EventListener);
 
     window.addEventListener("feedsChanged", ((e: CustomEvent) => {
@@ -95,9 +196,38 @@
     }) as EventListener);
 
     window.addEventListener("readHistoryCleared", () => {
-      readArticles = new Set();
+      readArticles = {};
     });
+
+    // Set up scroll detection for auto-marking as seen (with delay to prevent auto-marking on reload)
+    if (autoMarkAsSeen) {
+      setTimeout(() => {
+        setupScrollDetection();
+      }, 1000); // 1 second delay
+    }
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+      if (scrollHandler) {
+        window.removeEventListener("scroll", scrollHandler);
+      }
+    };
   });
+
+  function observeArticle(node: HTMLElement) {
+    if (observer && autoMarkAsSeen) {
+      observer.observe(node);
+    }
+    return {
+      destroy() {
+        if (observer) {
+          observer.unobserve(node);
+        }
+      },
+    };
+  }
 
   function handleArticleClick(articleId: string) {
     markAsRead(articleId);
@@ -134,12 +264,16 @@
             class:md:grid-cols-2={!compactView}
           >
             {#each articlesBySection.get(section.id) || [] as article}
-              <ArticleCard
-                {article}
-                isRead={readArticles.has(article.id)}
-                {compactView}
-                onArticleClick={() => handleArticleClick(article.id)}
-              />
+              <div data-article-id={article.id} use:observeArticle>
+                <ArticleCard
+                  {article}
+                  isRead={article.id in readArticles}
+                  isSeen={article.id in seenArticles}
+                  readTimestamp={readArticles[article.id]?.timestamp || null}
+                  {compactView}
+                  onArticleClick={() => handleArticleClick(article.id)}
+                />
+              </div>
             {/each}
           </div>
         </section>
@@ -156,12 +290,16 @@
       class:md:grid-cols-2={!compactView}
     >
       {#each filteredArticles as article}
-        <ArticleCard
-          {article}
-          isRead={readArticles.has(article.id)}
-          {compactView}
-          onArticleClick={() => handleArticleClick(article.id)}
-        />
+        <div data-article-id={article.id} use:observeArticle>
+          <ArticleCard
+            {article}
+            isRead={article.id in readArticles}
+            isSeen={article.id in seenArticles}
+            readTimestamp={readArticles[article.id]?.timestamp || null}
+            {compactView}
+            onArticleClick={() => handleArticleClick(article.id)}
+          />
+        </div>
       {/each}
     </div>
   {/if}

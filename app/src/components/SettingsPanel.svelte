@@ -9,6 +9,7 @@
   } from "../lib/storage";
 
   let showReadArticles = $state(true);
+  let autoMarkAsSeen = $state(true);
   let compactView = $state(false);
   let showSummaries = $state(true);
   let currentTheme = $state<string>("auto");
@@ -51,17 +52,28 @@
 
   onMount(() => {
     const prefs = getPreferences();
-    showReadArticles = prefs.showReadArticles;
+    showReadArticles = prefs.hideSeenArticles; // Note: inverted logic
+    autoMarkAsSeen = prefs.autoMarkAsSeen;
     compactView = prefs.compactView;
     showSummaries = prefs.showSummaries;
     currentTheme = getTheme();
   });
 
   function updatePreferences() {
-    setPreferences({ showReadArticles, compactView, showSummaries });
+    setPreferences({
+      hideSeenArticles: showReadArticles,
+      autoMarkAsSeen,
+      compactView,
+      showSummaries,
+    });
     window.dispatchEvent(
       new CustomEvent("preferencesChanged", {
-        detail: { showReadArticles, compactView, showSummaries },
+        detail: {
+          hideSeenArticles: showReadArticles,
+          autoMarkAsSeen,
+          compactView,
+          showSummaries,
+        },
       }),
     );
   }
@@ -164,15 +176,30 @@
 
         <label class="flex items-center justify-between gap-4 cursor-pointer">
           <div class="flex-1">
-            <span class="font-semibold block">Show Read Articles</span>
+            <span class="font-semibold block">Hide Seen Articles</span>
             <span class="text-sm text-base-content/60"
-              >Keep articles in the list after reading them</span
+              >Read or seen articles will be hidden on next page load</span
             >
           </div>
           <input
             type="checkbox"
             class="toggle toggle-primary"
             bind:checked={showReadArticles}
+            onchange={updatePreferences}
+          />
+        </label>
+
+        <label class="flex items-center justify-between gap-4 cursor-pointer">
+          <div class="flex-1">
+            <span class="font-semibold block">Auto-Mark as Seen</span>
+            <span class="text-sm text-base-content/60"
+              >Automatically mark articles as seen when scrolled past</span
+            >
+          </div>
+          <input
+            type="checkbox"
+            class="toggle toggle-primary"
+            bind:checked={autoMarkAsSeen}
             onchange={updatePreferences}
           />
         </label>
