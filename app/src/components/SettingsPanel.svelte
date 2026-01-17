@@ -11,7 +11,43 @@
   let showReadArticles = $state(true);
   let compactView = $state(false);
   let showSummaries = $state(true);
-  let currentTheme = $state<"light" | "dark" | "auto">("auto");
+  let currentTheme = $state<string>("auto");
+
+  // All daisyUI themes
+  const daisyThemes = [
+    "light",
+    "dark",
+    "cupcake",
+    "bumblebee",
+    "emerald",
+    "corporate",
+    "synthwave",
+    "retro",
+    "cyberpunk",
+    "valentine",
+    "halloween",
+    "garden",
+    "forest",
+    "aqua",
+    "lofi",
+    "pastel",
+    "fantasy",
+    "wireframe",
+    "black",
+    "luxury",
+    "dracula",
+    "cmyk",
+    "autumn",
+    "business",
+    "acid",
+    "lemonade",
+    "night",
+    "coffee",
+    "winter",
+    "dim",
+    "nord",
+    "sunset",
+  ];
 
   onMount(() => {
     const prefs = getPreferences();
@@ -30,7 +66,7 @@
     );
   }
 
-  function handleThemeChange(theme: "light" | "dark" | "auto") {
+  function handleThemeChange(theme: string) {
     currentTheme = theme;
     setTheme(theme);
   }
@@ -58,18 +94,52 @@
       <!-- Theme Selection -->
       <div class="space-y-4">
         <div class="font-semibold text-sm">Color Theme</div>
-        <div class="grid grid-cols-3 gap-3">
-          {#each ["light", "dark", "auto"] as theme}
-            <button
-              onclick={() => handleThemeChange(theme as any)}
-              class="btn btn-md capitalize {currentTheme === theme
-                ? 'btn-primary'
-                : 'btn-soft'}"
-            >
-              {theme === "light" ? "☀️" : theme === "dark" ? "🌙" : "🔄"}
-              {theme}
-            </button>
-          {/each}
+
+        <!-- Auto Theme Toggle -->
+        <div class="space-y-2">
+          <label class="flex items-center justify-between gap-4 cursor-pointer">
+            <div class="flex-1">
+              <span class="font-medium text-base-content/70 block"
+                >Auto Theme</span
+              >
+              <span class="text-sm text-base-content/60"
+                >Automatically switch between light and dark based on system
+                preference</span
+              >
+            </div>
+            <input
+              type="checkbox"
+              class="toggle toggle-primary"
+              checked={currentTheme === "auto"}
+              onchange={() =>
+                handleThemeChange(currentTheme === "auto" ? "light" : "auto")}
+            />
+          </label>
+        </div>
+
+        <!-- Theme Grid -->
+        <div class="space-y-2">
+          <div class="text-sm font-medium text-base-content/70">
+            Select Theme
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {#each daisyThemes as theme}
+              <button
+                onclick={() => handleThemeChange(theme)}
+                disabled={currentTheme === "auto"}
+                class="btn btn-sm capitalize {currentTheme === theme
+                  ? 'btn-primary'
+                  : 'btn-soft'} {currentTheme === 'auto' ? 'btn-disabled' : ''}"
+              >
+                {theme}
+              </button>
+            {/each}
+          </div>
+          {#if currentTheme === "auto"}
+            <p class="text-xs text-base-content/50">
+              Theme selection is disabled when Auto is active
+            </p>
+          {/if}
         </div>
       </div>
 

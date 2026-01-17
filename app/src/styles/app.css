@@ -2,9 +2,7 @@
 
 /* daisyUI plugin with theme configuration */
 @plugin "daisyui" {
-  themes:
-    light --default,
-    dark --prefersdark;
+  themes: all;
 }
 
 /* Typography plugin */

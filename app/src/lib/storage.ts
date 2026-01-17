@@ -16,7 +16,7 @@ const STORAGE_KEYS = {
  * User preferences stored in local storage
  */
 export interface UserPreferences {
-  theme: "light" | "dark" | "auto";
+  theme: string; // "auto" or any daisyUI theme name
   compactView: boolean;
   showSummaries: boolean;
   showReadArticles: boolean;
@@ -85,14 +85,14 @@ export function setTheme(theme: UserPreferences["theme"]): void {
   applyTheme(theme);
 }
 
-export function applyTheme(theme: UserPreferences["theme"]): void {
+export function applyTheme(theme: string): void {
   if (!isBrowser()) return;
 
   const html = document.documentElement;
 
   if (theme === "auto") {
     const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
+      "(prefers-color-scheme: dark)",
     ).matches;
     html.setAttribute("data-theme", prefersDark ? "dark" : "light");
     html.classList.toggle("dark", prefersDark);

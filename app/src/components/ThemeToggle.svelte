@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { getTheme, setTheme, applyTheme } from "../lib/storage";
+  import { applyTheme, getTheme, setTheme } from "../lib/storage";
 
-  let currentTheme: "light" | "dark" | "auto" = "auto";
+  let currentTheme: string = "auto";
 
   onMount(() => {
     currentTheme = getTheme();
@@ -18,7 +18,7 @@
   });
 
   function cycleTheme() {
-    const themes: Array<"light" | "dark" | "auto"> = ["light", "dark", "auto"];
+    const themes: string[] = ["light", "dark", "auto"];
     const currentIndex = themes.indexOf(currentTheme);
     currentTheme = themes[(currentIndex + 1) % themes.length];
     setTheme(currentTheme);
@@ -42,6 +42,11 @@
   class="btn btn-ghost btn-sm gap-2"
   title="Toggle theme"
 >
-  <span class="text-lg">{themeIcons[currentTheme]}</span>
-  <span class="hidden sm:inline">{themeLabels[currentTheme]}</span>
+  <span class="text-lg"
+    >{themeIcons[currentTheme as keyof typeof themeIcons] || "🎨"}</span
+  >
+  <span class="hidden sm:inline"
+    >{themeLabels[currentTheme as keyof typeof themeLabels] ||
+      currentTheme}</span
+  >
 </button>

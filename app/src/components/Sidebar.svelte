@@ -173,7 +173,7 @@
               >
                 <input
                   type="checkbox"
-                  class="toggle toggle-xs toggle-neutral"
+                  class="toggle toggle-xs toggle-primary"
                   checked={!hiddenFeeds.has(feed.id)}
                   onchange={() => toggleFeed(feed.id)}
                 />
@@ -215,7 +215,7 @@
                 >
                   <input
                     type="checkbox"
-                    class="toggle toggle-xs toggle-neutral"
+                    class="toggle toggle-xs toggle-primary"
                     checked={!hiddenFeeds.has(feed.id)}
                     onchange={() => toggleFeed(feed.id)}
                   />
