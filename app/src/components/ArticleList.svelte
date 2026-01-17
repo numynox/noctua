@@ -27,7 +27,6 @@
   let searchQuery = $state("");
   let hideSeenArticles = $state(true);
   let autoMarkAsSeen = $state(true);
-  let compactView = $state(false);
 
   // Store initial read/seen state for filtering
   let initialReadArticles = $state<ArticleStatuses>({});
@@ -157,7 +156,6 @@
     searchQuery = filters.searchQuery;
     hideSeenArticles = prefs.hideSeenArticles;
     autoMarkAsSeen = prefs.autoMarkAsSeen;
-    compactView = prefs.compactView;
 
     // If articles will be hidden, scroll to top after a short delay to prevent auto-marking
     if (
@@ -178,7 +176,6 @@
     window.addEventListener("preferencesChanged", ((e: CustomEvent) => {
       hideSeenArticles = e.detail.hideSeenArticles;
       autoMarkAsSeen = e.detail.autoMarkAsSeen;
-      compactView = e.detail.compactView;
 
       // Update scroll detection when autoMarkAsSeen changes
       if (autoMarkAsSeen && !scrollHandler) {
@@ -258,11 +255,7 @@
           {/if}
 
           <!-- Articles grid -->
-          <div
-            class="grid gap-6"
-            class:grid-cols-1={compactView}
-            class:md:grid-cols-2={!compactView}
-          >
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {#each articlesBySection.get(section.id) || [] as article}
               <div data-article-id={article.id} use:observeArticle>
                 <ArticleCard
@@ -270,7 +263,6 @@
                   isRead={article.id in readArticles}
                   isSeen={article.id in seenArticles}
                   readTimestamp={readArticles[article.id]?.timestamp || null}
-                  {compactView}
                   onArticleClick={() => handleArticleClick(article.id)}
                 />
               </div>
@@ -284,11 +276,7 @@
     {/each}
   {:else}
     <!-- Flat list (Home page) -->
-    <div
-      class="grid gap-6"
-      class:grid-cols-1={compactView}
-      class:md:grid-cols-2={!compactView}
-    >
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       {#each filteredArticles as article}
         <div data-article-id={article.id} use:observeArticle>
           <ArticleCard
@@ -296,7 +284,6 @@
             isRead={article.id in readArticles}
             isSeen={article.id in seenArticles}
             readTimestamp={readArticles[article.id]?.timestamp || null}
-            {compactView}
             onArticleClick={() => handleArticleClick(article.id)}
           />
         </div>

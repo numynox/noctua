@@ -10,8 +10,6 @@
 
   let showReadArticles = $state(true);
   let autoMarkAsSeen = $state(true);
-  let compactView = $state(false);
-  let showSummaries = $state(true);
   let currentTheme = $state<string>("auto");
 
   // All daisyUI themes
@@ -54,8 +52,6 @@
     const prefs = getPreferences();
     showReadArticles = prefs.hideSeenArticles; // Note: inverted logic
     autoMarkAsSeen = prefs.autoMarkAsSeen;
-    compactView = prefs.compactView;
-    showSummaries = prefs.showSummaries;
     currentTheme = getTheme();
   });
 
@@ -63,16 +59,12 @@
     setPreferences({
       hideSeenArticles: showReadArticles,
       autoMarkAsSeen,
-      compactView,
-      showSummaries,
     });
     window.dispatchEvent(
       new CustomEvent("preferencesChanged", {
         detail: {
           hideSeenArticles: showReadArticles,
           autoMarkAsSeen,
-          compactView,
-          showSummaries,
         },
       }),
     );
@@ -161,21 +153,6 @@
       <div class="space-y-4">
         <label class="flex items-center justify-between gap-4 cursor-pointer">
           <div class="flex-1">
-            <span class="font-semibold block">Compact View</span>
-            <span class="text-sm text-base-content/60"
-              >Show more articles with less detail</span
-            >
-          </div>
-          <input
-            type="checkbox"
-            class="toggle toggle-primary"
-            bind:checked={compactView}
-            onchange={updatePreferences}
-          />
-        </label>
-
-        <label class="flex items-center justify-between gap-4 cursor-pointer">
-          <div class="flex-1">
             <span class="font-semibold block">Hide Seen Articles</span>
             <span class="text-sm text-base-content/60"
               >Read or seen articles will be hidden on next page load</span
@@ -200,21 +177,6 @@
             type="checkbox"
             class="toggle toggle-primary"
             bind:checked={autoMarkAsSeen}
-            onchange={updatePreferences}
-          />
-        </label>
-
-        <label class="flex items-center justify-between gap-4 cursor-pointer">
-          <div class="flex-1">
-            <span class="font-semibold block">Show Summaries</span>
-            <span class="text-sm text-base-content/60"
-              >Display AI-generated summaries for articles</span
-            >
-          </div>
-          <input
-            type="checkbox"
-            class="toggle toggle-primary"
-            bind:checked={showSummaries}
             onchange={updatePreferences}
           />
         </label>

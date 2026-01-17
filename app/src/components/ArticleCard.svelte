@@ -6,18 +6,11 @@
     isRead: boolean;
     isSeen: boolean;
     readTimestamp: string | null;
-    compactView: boolean;
     onArticleClick: () => void;
   }
 
-  let {
-    article,
-    isRead,
-    isSeen,
-    readTimestamp,
-    compactView,
-    onArticleClick,
-  }: Props = $props();
+  let { article, isRead, isSeen, readTimestamp, onArticleClick }: Props =
+    $props();
 
   function formatDate(dateStr: string | null): string {
     if (!dateStr) return "";
@@ -80,7 +73,7 @@
   class:article-read={isRead}
   class:article-seen={isSeen}
 >
-  <div class="card-body" class:p-3={compactView} class:p-4={!compactView}>
+  <div class="card-body p-4">
     <!-- Header -->
     <div class="flex items-start gap-2">
       <div class="flex-1">
@@ -89,7 +82,6 @@
           target="_blank"
           rel="noopener noreferrer"
           class="card-title text-base hover:text-primary transition-colors"
-          class:text-sm={compactView}
           onclick={handleClick}
         >
           {article.title}
@@ -111,7 +103,7 @@
       </div>
 
       <!-- Image Preview -->
-      {#if !compactView && article.image_url}
+      {#if article.image_url}
         <div class="flex-none ml-2">
           <img
             src={article.image_url}
@@ -125,19 +117,17 @@
     </div>
 
     <!-- Summary -->
-    {#if !compactView}
-      <p class="text-sm text-base-content/80 line-clamp-3">
-        {article.summary || ""}
-      </p>
+    <p class="text-sm text-base-content/80 line-clamp-3">
+      {article.summary || ""}
+    </p>
 
-      <!-- Tags -->
-      {#if article.tags && article.tags.length > 0}
-        <div class="flex flex-wrap gap-1 mt-2">
-          {#each article.tags.slice(0, 3) as tag}
-            <span class="badge badge-outline badge-xs">{tag}</span>
-          {/each}
-        </div>
-      {/if}
+    <!-- Tags -->
+    {#if article.tags && article.tags.length > 0}
+      <div class="flex flex-wrap gap-1 mt-2">
+        {#each article.tags.slice(0, 3) as tag}
+          <span class="badge badge-outline badge-xs">{tag}</span>
+        {/each}
+      </div>
     {/if}
 
     <!-- Actions -->

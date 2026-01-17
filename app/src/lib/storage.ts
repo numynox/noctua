@@ -20,8 +20,6 @@ const STORAGE_KEYS = {
  * User preferences stored in local storage
  */
 export interface UserPreferences {
-  compactView: boolean;
-  showSummaries: boolean;
   hideSeenArticles: boolean;
   autoMarkAsSeen: boolean;
 }
@@ -48,8 +46,6 @@ export interface FilterSettings {
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
-  compactView: false,
-  showSummaries: true,
   hideSeenArticles: true,
   autoMarkAsSeen: true,
 };
