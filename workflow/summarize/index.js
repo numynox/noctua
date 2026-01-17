@@ -53,8 +53,8 @@ function loadInputData() {
   if (existsSync(DOWNLOAD_INPUT_PATH)) {
     console.log(
       chalk.yellow(
-        `⚠ Filter output not found, using download output: ${DOWNLOAD_INPUT_PATH}`
-      )
+        `⚠ Filter output not found, using download output: ${DOWNLOAD_INPUT_PATH}`,
+      ),
     );
     return JSON.parse(readFileSync(DOWNLOAD_INPUT_PATH, "utf-8"));
   }
@@ -63,7 +63,7 @@ function loadInputData() {
   throw new Error(
     `No input data found. Please run download step first.\n` +
       `  Tried: ${FILTER_INPUT_PATH}\n` +
-      `  Tried: ${DOWNLOAD_INPUT_PATH}`
+      `  Tried: ${DOWNLOAD_INPUT_PATH}`,
   );
 }
 
@@ -97,7 +97,7 @@ async function callGemini(prompt, content, model = "gemini-1.5-flash") {
 
   const genAI = initGemini();
   if (!genAI) {
-    return `[AI summary unavailable - no API key]`;
+    throw new Error("No API key available");
   }
 
   try {
@@ -140,8 +140,8 @@ async function summarizeSection(section, config) {
 
   console.log(
     chalk.cyan(
-      `  → Summarizing section: ${section.name} (${topArticles.length} articles)`
-    )
+      `  → Summarizing section: ${section.name} (${topArticles.length} articles)`,
+    ),
   );
 
   const prompt =
@@ -157,7 +157,7 @@ async function summarizeSection(section, config) {
           a.summary ||
           a.clean_content?.substring(0, 200) ||
           "No summary available"
-        }`
+        }`,
     )
     .join("\n\n");
 
@@ -181,8 +181,8 @@ async function summarizeOverall(data, config) {
 
   console.log(
     chalk.cyan(
-      `  → Generating overall summary (${allArticles.length} articles)...`
-    )
+      `  → Generating overall summary (${allArticles.length} articles)...`,
+    ),
   );
 
   const prompt =
@@ -196,7 +196,7 @@ async function summarizeOverall(data, config) {
           a.summary ||
           a.clean_content?.substring(0, 200) ||
           "No summary available"
-        }`
+        }`,
     )
     .join("\n\n");
 
@@ -216,9 +216,21 @@ async function main() {
 
   if (skipIfExists && outputExists()) {
     console.log(
-      chalk.yellow("⚠ Output already exists, skipping summarization")
+      chalk.yellow("⚠ Output already exists, skipping summarization"),
     );
     console.log(chalk.dim(`  Output: ${OUTPUT_PATH}`));
+    return;
+  }
+
+  // Check if API key is available
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!apiKey) {
+    console.log(chalk.yellow("⚠ No API key found - skipping summarization"));
+    console.log(
+      chalk.dim(
+        "  To enable AI summaries, set GEMINI_API_KEY environment variable",
+      ),
+    );
     return;
   }
 
@@ -231,9 +243,9 @@ async function main() {
       `Loaded ${data.sections.reduce(
         (sum, s) =>
           sum + s.feeds.reduce((fsum, f) => fsum + f.articles.length, 0),
-        0
-      )} articles\n`
-    )
+        0,
+      )} articles\n`,
+    ),
   );
 
   let apiCallCount = 0;
@@ -248,7 +260,7 @@ async function main() {
       apiCallCount++;
     } catch (error) {
       console.log(
-        chalk.red(`  ✗ Failed to summarize section: ${error.message}`)
+        chalk.red(`  ✗ Failed to summarize section: ${error.message}`),
       );
     }
   }
@@ -260,7 +272,7 @@ async function main() {
     apiCallCount++;
   } catch (error) {
     console.log(
-      chalk.red(`  ✗ Failed to generate overall summary: ${error.message}`)
+      chalk.red(`  ✗ Failed to generate overall summary: ${error.message}`),
     );
   }
 
