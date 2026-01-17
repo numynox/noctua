@@ -99,7 +99,7 @@
         <div class="space-y-2">
           <label class="flex items-center justify-between gap-4 cursor-pointer">
             <div class="flex-1">
-              <span class="font-medium text-base-content/70 block"
+              <span class="text-sm font-medium text-base-content/70 block"
                 >Auto Theme</span
               >
               <span class="text-sm text-base-content/60"
