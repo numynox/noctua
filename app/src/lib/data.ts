@@ -4,6 +4,7 @@
  */
 
 import { existsSync, readFileSync } from "fs";
+import { load } from "js-yaml";
 import { join } from "path";
 
 const PROJECT_ROOT = join(import.meta.dirname, "..", "..", "..");
@@ -14,6 +15,26 @@ const FALLBACK_PATHS = [
   "output/filter.json",
   "output/download.json",
 ];
+
+/**
+ * Load configuration from config.yaml
+ */
+export function loadConfig() {
+  const configPath = join(PROJECT_ROOT, "config.yaml");
+  if (existsSync(configPath)) {
+    const configData = readFileSync(configPath, "utf-8");
+    return load(configData) as any;
+  }
+  return {};
+}
+
+/**
+ * Get the base URL from configuration
+ */
+export function getBaseUrl(): string {
+  const config = loadConfig();
+  return config.settings?.website?.base_url || "/";
+}
 
 export interface Article {
   id: string;
@@ -68,13 +89,13 @@ export function loadFeedData(): FeedData {
   if (process.env.NOCTUA_DATA_PATH) {
     if (existsSync(process.env.NOCTUA_DATA_PATH)) {
       console.log(
-        `Loading data from override: ${process.env.NOCTUA_DATA_PATH}`
+        `Loading data from override: ${process.env.NOCTUA_DATA_PATH}`,
       );
       const rawData = readFileSync(process.env.NOCTUA_DATA_PATH, "utf-8");
       return JSON.parse(rawData) as FeedData;
     }
     console.warn(
-      `Override path ${process.env.NOCTUA_DATA_PATH} not found, falling back to defaults`
+      `Override path ${process.env.NOCTUA_DATA_PATH} not found, falling back to defaults`,
     );
   }
 
@@ -106,7 +127,7 @@ export function getAllArticles(data: FeedData): Article[] {
     .sort(
       (a, b) =>
         new Date(b.published || 0).getTime() -
-        new Date(a.published || 0).getTime()
+        new Date(a.published || 0).getTime(),
     );
 }
 
@@ -115,7 +136,7 @@ export function getAllArticles(data: FeedData): Article[] {
  */
 export function getSectionArticles(
   data: FeedData,
-  sectionId: string
+  sectionId: string,
 ): Article[] {
   const section = data.sections.find((s) => s.id === sectionId);
   if (!section) return [];
@@ -125,6 +146,6 @@ export function getSectionArticles(
     .sort(
       (a, b) =>
         new Date(b.published || 0).getTime() -
-        new Date(a.published || 0).getTime()
+        new Date(a.published || 0).getTime(),
     );
 }

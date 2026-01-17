@@ -12,9 +12,15 @@
     sections: Section[];
     activeId?: string; // 'home', 'settings', or section id
     processedAt?: string;
+    baseUrl?: string;
   }
 
-  let { sections, activeId = "home", processedAt }: Props = $props();
+  let {
+    sections,
+    activeId = "home",
+    processedAt,
+    baseUrl = "/",
+  }: Props = $props();
 
   function getRelativeTime(dateString?: string) {
     if (!dateString) return "";
@@ -117,7 +123,7 @@
   <!-- Logo -->
   <div class="p-6">
     <a
-      href="/"
+      href={baseUrl}
       class="flex items-center gap-3 text-2xl font-bold hover:text-primary transition-colors"
       onclick={closeMobileMenu}
     >
@@ -151,7 +157,7 @@
       <!-- Home Link + Toggles -->
       <div class="space-y-1">
         <a
-          href="/"
+          href={baseUrl}
           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all
             {activeId === 'home'
             ? 'bg-primary text-primary-content font-semibold shadow-md'
@@ -193,7 +199,7 @@
       {#each sections as section}
         <div class="space-y-1">
           <a
-            href={`/sections/${section.id}`}
+            href="{baseUrl}/sections/{section.id}"
             class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all
               {activeId === section.id
               ? 'bg-primary text-primary-content font-semibold shadow-md'
@@ -247,7 +253,7 @@
   <!-- Bottom Links -->
   <div class="p-4 border-t border-base-300">
     <a
-      href="/settings"
+      href="{baseUrl}/settings"
       class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all
         {activeId === 'settings'
         ? 'bg-primary text-primary-content font-semibold shadow-md'
