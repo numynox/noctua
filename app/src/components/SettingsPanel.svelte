@@ -26,7 +26,7 @@
     window.dispatchEvent(
       new CustomEvent("preferencesChanged", {
         detail: { showReadArticles, compactView, showSummaries },
-      })
+      }),
     );
   }
 
@@ -38,7 +38,7 @@
   function handleClearHistory() {
     if (
       confirm(
-        "Are you sure you want to clear your read article history? This cannot be undone."
+        "Are you sure you want to clear your read article history? This cannot be undone.",
       )
     ) {
       clearReadHistory();
@@ -57,16 +57,14 @@
 
       <!-- Theme Selection -->
       <div class="space-y-4">
-        <label class="label p-0">
-          <span class="label-text font-semibold">Color Theme</span>
-        </label>
+        <div class="font-semibold text-sm">Color Theme</div>
         <div class="grid grid-cols-3 gap-3">
           {#each ["light", "dark", "auto"] as theme}
             <button
               onclick={() => handleThemeChange(theme as any)}
-              class="btn btn-outline btn-md capitalize {currentTheme === theme
+              class="btn btn-md capitalize {currentTheme === theme
                 ? 'btn-primary'
-                : ''}"
+                : 'btn-soft'}"
             >
               {theme === "light" ? "☀️" : theme === "dark" ? "🌙" : "🔄"}
               {theme}
@@ -79,10 +77,10 @@
 
       <!-- Display Toggles -->
       <div class="space-y-4">
-        <label class="label cursor-pointer p-0">
-          <div>
-            <span class="label-text font-semibold block">Compact View</span>
-            <span class="label-text-alt text-base-content/60"
+        <label class="flex items-center justify-between gap-4 cursor-pointer">
+          <div class="flex-1">
+            <span class="font-semibold block">Compact View</span>
+            <span class="text-sm text-base-content/60"
               >Show more articles with less detail</span
             >
           </div>
@@ -94,12 +92,10 @@
           />
         </label>
 
-        <label class="label cursor-pointer p-0">
-          <div>
-            <span class="label-text font-semibold block"
-              >Show Read Articles</span
-            >
-            <span class="label-text-alt text-base-content/60"
+        <label class="flex items-center justify-between gap-4 cursor-pointer">
+          <div class="flex-1">
+            <span class="font-semibold block">Show Read Articles</span>
+            <span class="text-sm text-base-content/60"
               >Keep articles in the list after reading them</span
             >
           </div>
@@ -111,10 +107,10 @@
           />
         </label>
 
-        <label class="label cursor-pointer p-0">
-          <div>
-            <span class="label-text font-semibold block">Show Summaries</span>
-            <span class="label-text-alt text-base-content/60"
+        <label class="flex items-center justify-between gap-4 cursor-pointer">
+          <div class="flex-1">
+            <span class="font-semibold block">Show Summaries</span>
+            <span class="text-sm text-base-content/60"
               >Display AI-generated summaries for articles</span
             >
           </div>

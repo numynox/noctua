@@ -1,5 +1,5 @@
 import svelte from "@astrojs/svelte";
-import tailwind from "@astrojs/tailwind";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import { readFileSync } from "fs";
 import { load } from "js-yaml";
@@ -9,7 +9,7 @@ const config = load(readFileSync("../config.yaml", "utf8"));
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [svelte(), tailwind()],
+  integrations: [svelte()],
 
   // Output static files
   output: "static",
@@ -27,6 +27,7 @@ export default defineConfig({
 
   // Vite configuration
   vite: {
+    plugins: [tailwindcss()],
     build: {
       // Ensure assets are inlined or properly referenced
       assetsInlineLimit: 4096,

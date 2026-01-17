@@ -61,7 +61,7 @@
     window.dispatchEvent(
       new CustomEvent("filtersChanged", {
         detail: { searchQuery },
-      })
+      }),
     );
   }
 
@@ -69,7 +69,7 @@
     toggleFeedVisibility(feedId);
     hiddenFeeds = getHiddenFeeds();
     window.dispatchEvent(
-      new CustomEvent("feedsChanged", { detail: { hiddenFeeds } })
+      new CustomEvent("feedsChanged", { detail: { hiddenFeeds } }),
     );
   }
 
@@ -132,7 +132,7 @@
       <input
         type="text"
         placeholder="Search articles..."
-        class="input input-bordered w-full pl-10 h-10 bg-base-100"
+        class="input w-full pl-10 h-10 bg-base-100"
         bind:value={searchQuery}
         oninput={updateSearch}
       />
@@ -173,7 +173,7 @@
               >
                 <input
                   type="checkbox"
-                  class="checkbox checkbox-xs checkbox-primary"
+                  class="toggle toggle-xs toggle-neutral"
                   checked={!hiddenFeeds.has(feed.id)}
                   onchange={() => toggleFeed(feed.id)}
                 />
@@ -215,7 +215,7 @@
                 >
                   <input
                     type="checkbox"
-                    class="checkbox checkbox-xs checkbox-primary"
+                    class="toggle toggle-xs toggle-neutral"
                     checked={!hiddenFeeds.has(feed.id)}
                     onchange={() => toggleFeed(feed.id)}
                   />

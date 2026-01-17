@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/* daisyUI plugin with theme configuration */
+@plugin "daisyui" {
+  themes:
+    light --default,
+    dark --prefersdark;
+}
+
+/* Typography plugin */
+@plugin "@tailwindcss/typography";
+
+/* Custom theme */
+@theme {
+  /* Font family customization */
+  --font-family-sans:
+    Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}

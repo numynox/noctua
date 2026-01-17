@@ -44,7 +44,7 @@
 <article
   class="card bg-base-200 article-card"
   class:article-read={isRead}
-  class:card-compact={compactView}
+  class:card-sm={compactView}
 >
   <div class="card-body" class:p-3={compactView} class:p-4={!compactView}>
     <!-- Header -->
