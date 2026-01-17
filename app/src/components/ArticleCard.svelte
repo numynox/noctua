@@ -66,28 +66,34 @@
     // Navigate after marking as read
     window.open(article.url, "_blank", "noopener,noreferrer");
   }
+
+  function handleCardClick() {
+    onArticleClick();
+    // Navigate after marking as read
+    window.open(article.url, "_blank", "noopener,noreferrer");
+  }
 </script>
 
 <article
-  class="card bg-base-200 article-card"
+  class="card bg-base-200 article-card cursor-pointer hover:outline hover:outline-2 hover:outline-primary transition-all"
   class:article-read={isRead}
   class:article-seen={isSeen}
+  onclick={handleCardClick}
 >
   <div class="card-body p-4">
     <!-- Header -->
     <div class="flex items-start gap-2">
       <div class="flex-1">
-        <a
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="card-title text-base hover:text-primary transition-colors"
-          onclick={handleClick}
-        >
+        <h3 class="card-title text-base transition-colors">
           {article.title}
-        </a>
+        </h3>
 
         <div class="flex items-center gap-2 text-xs text-base-content/60 mt-1">
+          {#if readTimestamp}
+            <span class="badge badge-primary badge-xs"
+              >{formatReadTimestamp(readTimestamp)}</span
+            >
+          {/if}
           <span>{article.feed_name}</span>
           {#if article.published}
             <span>•</span>
@@ -129,29 +135,6 @@
         {/each}
       </div>
     {/if}
-
-    <!-- Actions -->
-    <div class="flex items-center justify-between mt-2">
-      <!-- Read timestamp (only for read articles) -->
-      {#if readTimestamp}
-        <div class="text-xs text-base-content/50">
-          {formatReadTimestamp(readTimestamp)}
-        </div>
-      {:else}
-        <!-- Placeholder to maintain consistent height -->
-        <div class="text-xs opacity-0">Read today</div>
-      {/if}
-
-      <a
-        href={article.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="btn btn-primary btn-xs"
-        onclick={handleClick}
-      >
-        Read →
-      </a>
-    </div>
   </div>
 </article>
 
