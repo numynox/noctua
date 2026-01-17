@@ -66,8 +66,17 @@ jobs:
         run: npm run filter
         continue-on-error: true
 
+      - name: Check for API key
+        id: check_api_key
+        run: |
+          if [ -n "${{ secrets.GEMINI_API_KEY }}" ]; then
+            echo "has_api_key=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_api_key=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Summarize feeds (AI)
-        if: (github.event_name != 'workflow_dispatch' || github.event.inputs.include_summarize == 'true') && secrets.GEMINI_API_KEY != ''
+        if: (github.event_name != 'workflow_dispatch' || github.event.inputs.include_summarize == 'true') && steps.check_api_key.outputs.has_api_key == 'true'
         run: npm run summarize
         continue-on-error: true
         env:
