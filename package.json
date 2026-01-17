@@ -16,7 +16,7 @@
     "dev:website": "cd app && npm run dev",
     "preview:website": "cd app && npm run preview",
     "workflow:all": "npm run download && npm run filter && npm run summarize && npm run build:website",
-    "install:all": "npm install && cd app && npm install && cd ../workflow/summarize && npm install"
+    "install:all": "npm install"
   },
   "keywords": [
     "rss",
