@@ -57,8 +57,15 @@
         const articleId = element.getAttribute("data-article-id");
 
         // Mark as seen if article is above viewport (scrolled past) and not already marked
+        // but only if it is within one viewport height above the top. This
+        // prevents marking items that were jumped far past (e.g., from a
+        // navigation or rapid scroll).
+        const bottom = rect.bottom;
+        const viewportH =
+          window.innerHeight || document.documentElement.clientHeight || 0;
         if (
-          rect.bottom < 0 &&
+          bottom < 0 &&
+          bottom > -viewportH &&
           articleId &&
           !readArticles[articleId] &&
           !seenArticles[articleId]
@@ -77,16 +84,23 @@
     observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          // Mark as seen when article completely leaves the viewport (scrolled past)
-          if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
-            const articleId = entry.target.getAttribute("data-article-id");
-            if (
-              articleId &&
-              !readArticles[articleId] &&
-              !seenArticles[articleId]
-            ) {
-              markAsSeen(articleId);
-              seenArticles = getSeenArticles();
+          // Mark as seen when article leaves the viewport from the top, but
+          // only if it is within one viewport height above the top. This
+          // avoids marking items that were scrolled/jumped far out of view.
+          if (!entry.isIntersecting) {
+            const bottom = entry.boundingClientRect.bottom;
+            const viewportH =
+              window.innerHeight || document.documentElement.clientHeight || 0;
+            if (bottom < 0 && bottom > -viewportH) {
+              const articleId = entry.target.getAttribute("data-article-id");
+              if (
+                articleId &&
+                !readArticles[articleId] &&
+                !seenArticles[articleId]
+              ) {
+                markAsSeen(articleId);
+                seenArticles = getSeenArticles();
+              }
             }
           }
         });
