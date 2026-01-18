@@ -16,10 +16,10 @@
   interface Props {
     articles: Article[];
     sections: Section[];
-    groupBySection?: boolean;
+    contextId?: string;
   }
 
-  let { articles, sections, groupBySection = true }: Props = $props();
+  let { articles, sections, contextId = "home" }: Props = $props();
 
   let readArticles = $state<ArticleStatuses>({});
   let seenArticles = $state<ArticleStatuses>({});
@@ -36,10 +36,8 @@
   let initialReadArticles = $state<ArticleStatuses>({});
   let initialSeenArticles = $state<ArticleStatuses>({});
 
-  // Intersection observer to mark articles as seen
-  let observer: IntersectionObserver | null = null;
+  // Scroll handler to mark articles as seen
   let scrollHandler: (() => void) | null = null;
-  let hasUserScrolled = false;
 
   function setupScrollDetection() {
     if (scrollHandler) {
@@ -47,9 +45,6 @@
     }
 
     scrollHandler = () => {
-      // Mark that user has scrolled
-      hasUserScrolled = true;
-
       // Check all article elements that are currently rendered
       const articleElements = document.querySelectorAll("[data-article-id]");
       articleElements.forEach((element) => {
@@ -79,52 +74,17 @@
     window.addEventListener("scroll", scrollHandler, { passive: true });
   }
 
-  function setupObserver() {
-    if (observer) observer.disconnect();
-    observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          // Mark as seen when article leaves the viewport from the top, but
-          // only if it is within one viewport height above the top. This
-          // avoids marking items that were scrolled/jumped far out of view.
-          if (!entry.isIntersecting) {
-            const bottom = entry.boundingClientRect.bottom;
-            const viewportH =
-              window.innerHeight || document.documentElement.clientHeight || 0;
-            if (bottom < 0 && bottom > -viewportH) {
-              const articleId = entry.target.getAttribute("data-article-id");
-              if (
-                articleId &&
-                !readArticles[articleId] &&
-                !seenArticles[articleId]
-              ) {
-                markAsSeen(articleId);
-                seenArticles = getSeenArticles();
-              }
-            }
-          }
-        });
-      },
-      {
-        threshold: 0, // Trigger when element completely enters/leaves viewport
-        rootMargin: "0px",
-      },
-    );
-  }
-
   // Filtered articles
   let filteredArticles = $derived.by(() => {
     let result = articles;
 
-    // Filter by hidden feeds (per-context). For home view (flat list), use
-    // the 'home' context. For section view, use the article's section id.
+    // Filter by hidden feeds (per-context). For this flat list component
+    // use the 'home' context for hidden feeds.
     if (hiddenFeeds.size > 0) {
       result = result.filter((a) => {
         const section = sections.find((s) => s.id === a.section_id);
         const feed = section?.feeds.find((f) => f.name === a.feed_name);
-        const contextHidden = getHiddenFeedsForContext(
-          groupBySection ? a.section_id : "home",
-        );
+        const contextHidden = getHiddenFeedsForContext(contextId);
         return !feed || !contextHidden.has(feed.id);
       });
     }
@@ -150,32 +110,10 @@
     return result;
   });
 
-  // Group articles by section if requested
-  let articlesBySection = $derived.by(() => {
-    if (!groupBySection) return null;
-
-    const grouped = new Map<string, Article[]>();
-    for (const article of filteredArticles) {
-      const list = grouped.get(article.section_id) || [];
-      list.push(article);
-      grouped.set(article.section_id, list);
-    }
-    return grouped;
-  });
-
-  // Count of articles in the current filtered set that are not read/seen
-  let unreadFilteredCount = $derived.by(() => {
-    return filteredArticles.filter(
-      (a) => !readArticles[a.id] && !seenArticles[a.id],
-    ).length;
-  });
-
   onMount(() => {
     readArticles = getReadArticles();
     seenArticles = getSeenArticles();
-    // Default to home context for hidden feeds on the flat list; per-article
-    // filtering will use per-section contexts where appropriate.
-    hiddenFeeds = getHiddenFeedsForContext("home");
+    hiddenFeeds = getHiddenFeedsForContext(contextId);
 
     // Snapshot the initial read/seen state for filtering (so items
     // marked during this session are not hidden immediately).
@@ -265,27 +203,13 @@
     }
 
     return () => {
-      if (observer) {
-        observer.disconnect();
-      }
       if (scrollHandler) {
         window.removeEventListener("scroll", scrollHandler);
       }
     };
   });
 
-  function observeArticle(node: HTMLElement) {
-    if (observer && autoMarkAsSeen) {
-      observer.observe(node);
-    }
-    return {
-      destroy() {
-        if (observer) {
-          observer.unobserve(node);
-        }
-      },
-    };
-  }
+  // per-node observation removed; detection is handled globally by scroll
 
   function handleArticleClick(articleId: string) {
     markAsRead(articleId);
@@ -299,47 +223,20 @@
     Showing {filteredArticles.length} of {articles.length} articles
   </div>
 
-  {#if groupBySection && articlesBySection}
-    <!-- Articles grouped by section -->
-    {#each sections as section}
-      {#if articlesBySection.has(section.id)}
-        <section id="section-{section.id}" class="scroll-mt-24">
-          <!-- Articles grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {#each articlesBySection.get(section.id) || [] as article}
-              <div data-article-id={article.id} use:observeArticle>
-                <ArticleCard
-                  {article}
-                  isRead={article.id in readArticles}
-                  isSeen={article.id in seenArticles}
-                  readTimestamp={readArticles[article.id]?.timestamp || null}
-                  onArticleClick={() => handleArticleClick(article.id)}
-                />
-              </div>
-            {/each}
-          </div>
-        </section>
-        {#if section !== sections[sections.length - 1] && sections.length > 1}
-          <div class="divider opacity-10 py-8"></div>
-        {/if}
-      {/if}
+  <!-- Flat list (used by home and section pages) -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {#each filteredArticles as article}
+      <div data-article-id={article.id}>
+        <ArticleCard
+          {article}
+          isRead={article.id in readArticles}
+          isSeen={article.id in seenArticles}
+          readTimestamp={readArticles[article.id]?.timestamp || null}
+          onArticleClick={() => handleArticleClick(article.id)}
+        />
+      </div>
     {/each}
-  {:else}
-    <!-- Flat list (Home page) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {#each filteredArticles as article}
-        <div data-article-id={article.id} use:observeArticle>
-          <ArticleCard
-            {article}
-            isRead={article.id in readArticles}
-            isSeen={article.id in seenArticles}
-            readTimestamp={readArticles[article.id]?.timestamp || null}
-            onArticleClick={() => handleArticleClick(article.id)}
-          />
-        </div>
-      {/each}
-    </div>
-  {/if}
+  </div>
 
   <!-- Large 'All Caught Up' area always present after the list so users can scroll to it -->
   <div class="min-h-screen mt-8 flex items-center justify-center">
