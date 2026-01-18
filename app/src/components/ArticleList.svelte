@@ -155,6 +155,13 @@
     // Listen for filter changes
     window.addEventListener("filtersChanged", ((e: CustomEvent) => {
       searchQuery = e.detail.searchQuery;
+      // When the search query changes, jump to the top so users see
+      // results from the start of the list.
+      try {
+        window.scrollTo(0, 0);
+      } catch (e) {
+        /* ignore */
+      }
     }) as EventListener);
 
     window.addEventListener("preferencesChanged", ((e: CustomEvent) => {
@@ -174,6 +181,13 @@
 
     window.addEventListener("feedsChanged", ((e: CustomEvent) => {
       hiddenFeeds = e.detail.hiddenFeeds;
+      // When feeds are hidden/unhidden, jump to top so the new
+      // filtered list starts at the top of the viewport.
+      try {
+        window.scrollTo(0, 0);
+      } catch (e) {
+        /* ignore */
+      }
     }) as EventListener);
 
     window.addEventListener("readHistoryCleared", () => {
