@@ -224,21 +224,17 @@
     };
   });
 
-  // per-node observation removed; detection is handled globally by scroll
-
   function handleArticleClick(articleId: string) {
     markAsRead(articleId);
     readArticles = getReadArticles();
   }
 </script>
 
-<div class="space-y-4 md:space-y-8">
-  <!-- Results count -->
-  <div class="text-sm text-base-content/40 mb-6 font-medium">
+<div class="space-y-4">
+  <div class="text-sm text-base-content/40 font-medium">
     Showing {filteredArticles.length} of {articles.length} articles
   </div>
 
-  <!-- Flat list (used by home and section pages) -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     {#each filteredArticles as article}
       <div data-article-id={article.id}>

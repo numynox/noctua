@@ -13,7 +13,7 @@
 
 {#if summary}
   <div
-    class="card bg-primary/5 border border-primary/20 mb-10 relative overflow-hidden group"
+    class="card bg-primary/5 border border-primary/20 mb-8 relative overflow-hidden group"
   >
     <div
       class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"

@@ -82,7 +82,7 @@ export interface FeedData {
 }
 
 /**
- * Load feed data from step 3 output
+ * Load feed data from disk with fallback paths
  */
 export function loadFeedData(): FeedData {
   // Check for environment variable override first
