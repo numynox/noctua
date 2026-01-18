@@ -254,9 +254,7 @@
   </div>
 
   <!-- Large 'All Caught Up' area always present after the list so users can scroll to it -->
-  <div
-    class="min-h-[40vh] mt-6 md:min-h-screen md:mt-8 flex items-center justify-center"
-  >
+  <div class="min-h-screen mt-8 flex items-center justify-center">
     <div
       class="text-center py-8 md:py-20 bg-base-200/50 rounded-3xl border border-dashed border-base-300 w-full max-w-3xl"
     >
