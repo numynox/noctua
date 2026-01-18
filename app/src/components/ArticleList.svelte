@@ -38,13 +38,26 @@
 
   // Scroll handler to mark articles as seen
   let scrollHandler: (() => void) | null = null;
+  // Track last scroll position so we only mark as seen when scrolling down
+  let lastScrollY = 0;
 
   function setupScrollDetection() {
     if (scrollHandler) {
       window.removeEventListener("scroll", scrollHandler);
     }
 
+    // Initialize lastScrollY to current scroll position to avoid marking
+    // items immediately when setting up detection.
+    lastScrollY = window.scrollY || window.pageYOffset || 0;
+
     scrollHandler = () => {
+      const currentScrollY = window.scrollY || window.pageYOffset || 0;
+      // Only proceed when scrolling down
+      if (currentScrollY <= lastScrollY) {
+        lastScrollY = currentScrollY;
+        return;
+      }
+
       // Check all article elements that are currently rendered
       const articleElements = document.querySelectorAll("[data-article-id]");
       articleElements.forEach((element) => {
@@ -69,6 +82,8 @@
           seenArticles = getSeenArticles();
         }
       });
+
+      lastScrollY = currentScrollY;
     };
 
     window.addEventListener("scroll", scrollHandler, { passive: true });

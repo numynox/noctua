@@ -70,8 +70,7 @@
 <article
   class="card bg-base-200 article-card cursor-pointer hover:outline hover:outline-2 hover:outline-primary transition-all"
   class:opacity-60={isRead || isSeen}
-  class:filter={isRead || isSeen}
-  class:grayscale={isRead || isSeen}
+  class:grayscale-25={isRead || isSeen}
   onclick={handleCardClick}
 >
   <div class="card-body p-4">
@@ -134,5 +133,3 @@
     {/if}
   </div>
 </article>
-
-<!-- Styles moved to Tailwind utilities; component uses Tailwind classes only -->
