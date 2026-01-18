@@ -8,8 +8,8 @@ settings:
 
   # Website generation settings
   website:
-    title: "Noctua News"
-    description: "AI-curated news from your favorite sources"
+    title: "Noctua"
+    description: "An RSS feed reader."
     base_url: "/noctua"  # Change for GitHub Pages deployment
     reset_time_minutes: 15  # If returning to the site after this time, refresh content
 
