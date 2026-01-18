@@ -21,5 +21,10 @@ const articles = getSectionArticles(data, section.id);
     <SummaryBox summary={section.ai_summary} icon={section.icon} />
   </div>
 
-  <ArticleList articles={articles} sections={[section]} client:load />
+  <ArticleList
+    articles={articles}
+    sections={[section]}
+    contextId={section.id}
+    client:load
+  />
 </Layout>

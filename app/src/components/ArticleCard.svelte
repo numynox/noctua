@@ -60,13 +60,6 @@
     }
   }
 
-  function handleClick(event: Event) {
-    event.preventDefault();
-    onArticleClick();
-    // Navigate after marking as read
-    window.open(article.url, "_blank", "noopener,noreferrer");
-  }
-
   function handleCardClick() {
     onArticleClick();
     // Navigate after marking as read
@@ -75,25 +68,20 @@
 </script>
 
 <article
-  class="card bg-base-200 article-card cursor-pointer hover:outline hover:outline-2 hover:outline-primary transition-all"
-  class:article-read={isRead}
-  class:article-seen={isSeen}
+  class="cursor-pointer transition-all bg-transparent md:bg-base-200 md:rounded-lg md:shadow-sm md:hover:outline md:hover:outline-2 md:hover:outline-primary"
+  class:opacity-60={isRead || isSeen}
+  class:grayscale-25={isRead || isSeen}
   onclick={handleCardClick}
 >
-  <div class="card-body p-4">
+  <div class="p-0 md:p-4">
     <!-- Header -->
     <div class="flex items-start gap-2">
       <div class="flex-1">
-        <h3 class="card-title text-base transition-colors">
+        <h3 class="text-sm md:text-base font-bold">
           {article.title}
         </h3>
 
         <div class="flex items-center gap-2 text-xs text-base-content/60 mt-1">
-          {#if readTimestamp}
-            <span class="badge badge-primary badge-xs"
-              >{formatReadTimestamp(readTimestamp)}</span
-            >
-          {/if}
           <span>{article.feed_name}</span>
           {#if article.published}
             <span>•</span>
@@ -106,6 +94,14 @@
             <span>{article.author}</span>
           {/if}
         </div>
+
+        <div class="flex items-center gap-2 text-xs text-base-content/60 mt-2">
+          {#if readTimestamp}
+            <span class="badge badge-primary badge-xs"
+              >{formatReadTimestamp(readTimestamp)}</span
+            >
+          {/if}
+        </div>
       </div>
 
       <!-- Image Preview -->
@@ -114,7 +110,7 @@
           <img
             src={article.image_url}
             alt=""
-            class="w-24 h-24 object-cover rounded-md bg-base-300"
+            class="w-16 h-16 md:w-24 md:h-24 object-cover rounded-md bg-base-300"
             loading="lazy"
             onerror={handleImageError}
           />
@@ -123,13 +119,13 @@
     </div>
 
     <!-- Summary -->
-    <p class="text-sm text-base-content/80 line-clamp-3">
+    <p class="mt-2 text-sm text-base-content/80 line-clamp-2 md:line-clamp-3">
       {article.summary || ""}
     </p>
 
     <!-- Tags -->
     {#if article.tags && article.tags.length > 0}
-      <div class="flex flex-wrap gap-1 mt-2">
+      <div class="flex flex-wrap gap-1 md:gap-1 mt-2">
         {#each article.tags.slice(0, 3) as tag}
           <span class="badge badge-outline badge-xs">{tag}</span>
         {/each}
@@ -137,22 +133,3 @@
     {/if}
   </div>
 </article>
-
-<style>
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .article-read {
-    opacity: 0.6;
-    filter: grayscale(0.3);
-  }
-
-  .article-seen {
-    opacity: 0.6;
-    filter: grayscale(0.2);
-  }
-</style>

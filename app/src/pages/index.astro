@@ -13,10 +13,5 @@ const allArticles = getAllArticles(data);
   <SummaryBox summary={data.overall_summary} icon="🦉" client:load />
 
   <!-- Articles List -->
-  <ArticleList
-    articles={allArticles}
-    sections={data.sections}
-    groupBySection={false}
-    client:load
-  />
+  <ArticleList articles={allArticles} sections={data.sections} client:load />
 </Layout>

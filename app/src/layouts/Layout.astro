@@ -9,20 +9,25 @@ interface Props {
   activeId?: string;
 }
 
-const {
-  title,
-  description = "AI-curated news from your favorite sources",
-  activeId,
-} = Astro.props;
-const data = loadFeedData();
-const siteTitle = "Noctua News";
 const baseUrl = getBaseUrl();
 const config = loadConfig();
+const data = loadFeedData();
+
+const siteTitle = config?.settings?.website?.title || "Noctua";
+const siteDescription =
+  config?.settings?.website?.description || "An RSS feed reader.";
+const { title, description = siteDescription, activeId } = Astro.props;
 const resetMinutesCfg = config?.settings?.website?.reset_time_minutes || 30;
+const themeColor = "#0ea5a4";
 ---
 
 <!doctype html>
-<html lang="en" data-theme="dark" data-reset-minutes={resetMinutesCfg}>
+<html
+  lang="en"
+  data-theme="dark"
+  data-base-url={baseUrl}
+  data-reset-minutes={resetMinutesCfg}
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -31,8 +36,9 @@ const resetMinutesCfg = config?.settings?.website?.reset_time_minutes || 30;
 
     <title>{title} | {siteTitle}</title>
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href={`${baseUrl}/favicon.svg`} />
+    <link rel="icon" type="image/svg+xml" href={baseUrl + "/favicon.svg"} />
+    <link rel="manifest" href={baseUrl + "/manifest.webmanifest"} />
+    <meta name="theme-color" content={themeColor} />
 
     <!-- Theme initialization script (prevents flash) -->
     <script is:inline>
@@ -50,10 +56,6 @@ const resetMinutesCfg = config?.settings?.website?.reset_time_minutes || 30;
         }
 
         document.documentElement.setAttribute("data-theme", actualTheme);
-        document.documentElement.classList.toggle(
-          "dark",
-          actualTheme === "dark",
-        );
       })();
     </script>
     <!-- Disable scroll restoration and start auto-refresh timer -->
@@ -120,8 +122,50 @@ const resetMinutesCfg = config?.settings?.website?.reset_time_minutes || 30;
         });
       })();
     </script>
+
+    <script is:inline>
+      (function () {
+        if (
+          "serviceWorker" in navigator &&
+          window.location.protocol !== "file:"
+        ) {
+          window.addEventListener("load", function () {
+            try {
+              navigator.serviceWorker
+                .register(document.documentElement.dataset.baseUrl + "/sw.js")
+                .catch((e) => {
+                  console.error("Service worker registration failed:", e);
+                });
+            } catch (e) {
+              console.error("Service worker registration failed:", e);
+            }
+          });
+        }
+      })();
+    </script>
   </head>
   <body class="bg-base-100 text-base-content overflow-x-hidden">
+    <!-- Offline notice: shown when offline -->
+    <div id="noctua-offline" class="hidden fixed top-4 right-4 z-50">
+      <div class="badge badge-warning">Offline</div>
+    </div>
+    <script is:inline>
+      (function () {
+        function updateBanner() {
+          const el = document.getElementById("noctua-offline");
+          if (!el) return;
+          if (navigator.onLine) {
+            el.classList.add("hidden");
+          } else {
+            el.classList.remove("hidden");
+          }
+        }
+        window.addEventListener("online", updateBanner);
+        window.addEventListener("offline", updateBanner);
+        // init
+        setTimeout(updateBanner, 0);
+      })();
+    </script>
     <div class="flex min-h-screen">
       <!-- Sidebar -->
       <Sidebar
@@ -142,49 +186,3 @@ const resetMinutesCfg = config?.settings?.website?.reset_time_minutes || 30;
     </div>
   </body>
 </html>
-
-<style is:global>
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: oklch(var(--bc) / 0.2);
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: oklch(var(--bc) / 0.3);
-  }
-
-  /* Smooth transitions for theme changes */
-  html {
-    transition:
-      background-color 0.3s ease,
-      color 0.3s ease;
-  }
-
-  /* Article card hover effects */
-  .article-card {
-    transition: all 0.2s ease;
-  }
-
-  .article-card:hover {
-    transform: translateY(-2px);
-  }
-
-  /* Read article styling */
-  .article-read {
-    opacity: 0.6;
-  }
-
-  .article-read:hover {
-    opacity: 1;
-  }
-</style>
