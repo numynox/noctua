@@ -232,7 +232,7 @@
   }
 </script>
 
-<div class="space-y-8">
+<div class="space-y-4 md:space-y-8">
   <!-- Results count -->
   <div class="text-sm text-base-content/40 mb-6 font-medium">
     Showing {filteredArticles.length} of {articles.length} articles
@@ -254,13 +254,15 @@
   </div>
 
   <!-- Large 'All Caught Up' area always present after the list so users can scroll to it -->
-  <div class="min-h-screen mt-8 flex items-center justify-center">
+  <div
+    class="min-h-[40vh] mt-6 md:min-h-screen md:mt-8 flex items-center justify-center"
+  >
     <div
-      class="text-center py-20 bg-base-200/50 rounded-3xl border border-dashed border-base-300 w-full max-w-3xl"
+      class="text-center py-8 md:py-20 bg-base-200/50 rounded-3xl border border-dashed border-base-300 w-full max-w-3xl"
     >
       <div class="text-6xl mb-4">✅</div>
       <h3 class="text-2xl font-bold mb-2">You're all caught up</h3>
-      <p class="text-base-content/60 mb-6 px-16">
+      <p class="text-base-content/60 mb-6 px-6 md:px-16">
         There are no articles to show right now — either you've already viewed
         them, or your current filters hide some items.
       </p>
