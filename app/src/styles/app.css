@@ -4,12 +4,3 @@
 @plugin "daisyui" {
   themes: all;
 }
-
-/* Typography plugin */
-@plugin "@tailwindcss/typography";
-
-/* Custom theme */
-@theme {
-  /* System font stack - no external dependencies */
-  --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-}

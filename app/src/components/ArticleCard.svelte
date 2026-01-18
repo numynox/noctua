@@ -60,13 +60,6 @@
     }
   }
 
-  function handleClick(event: Event) {
-    event.preventDefault();
-    onArticleClick();
-    // Navigate after marking as read
-    window.open(article.url, "_blank", "noopener,noreferrer");
-  }
-
   function handleCardClick() {
     onArticleClick();
     // Navigate after marking as read
@@ -76,8 +69,9 @@
 
 <article
   class="card bg-base-200 article-card cursor-pointer hover:outline hover:outline-2 hover:outline-primary transition-all"
-  class:article-read={isRead}
-  class:article-seen={isSeen}
+  class:opacity-60={isRead || isSeen}
+  class:filter={isRead || isSeen}
+  class:grayscale={isRead || isSeen}
   onclick={handleCardClick}
 >
   <div class="card-body p-4">
@@ -89,11 +83,6 @@
         </h3>
 
         <div class="flex items-center gap-2 text-xs text-base-content/60 mt-1">
-          {#if readTimestamp}
-            <span class="badge badge-primary badge-xs"
-              >{formatReadTimestamp(readTimestamp)}</span
-            >
-          {/if}
           <span>{article.feed_name}</span>
           {#if article.published}
             <span>•</span>
@@ -104,6 +93,14 @@
           {#if article.author}
             <span>•</span>
             <span>{article.author}</span>
+          {/if}
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-base-content/60 mt-2">
+          {#if readTimestamp}
+            <span class="badge badge-primary badge-xs"
+              >{formatReadTimestamp(readTimestamp)}</span
+            >
           {/if}
         </div>
       </div>
@@ -138,21 +135,4 @@
   </div>
 </article>
 
-<style>
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .article-read {
-    opacity: 0.6;
-    filter: grayscale(0.3);
-  }
-
-  .article-seen {
-    opacity: 0.6;
-    filter: grayscale(0.2);
-  }
-</style>
+<!-- Styles moved to Tailwind utilities; component uses Tailwind classes only -->

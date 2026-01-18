@@ -196,7 +196,7 @@
   </div>
 
   <!-- Navigation -->
-  <nav class="flex-1 overflow-y-auto px-4 pb-6 custom-scrollbar">
+  <nav class="flex-1 overflow-y-auto px-4 pb-6">
     <div class="space-y-2">
       <!-- Transition wrapper for each main link to allow for sub-items -->
 
@@ -311,19 +311,3 @@
     </a>
   </div>
 </aside>
-
-<style>
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: oklch(var(--bc) / 0.1);
-    border-radius: 10px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: oklch(var(--bc) / 0.2);
-  }
-</style>
