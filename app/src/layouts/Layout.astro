@@ -9,13 +9,9 @@ interface Props {
   activeId?: string;
 }
 
-const {
-  title,
-  description = "AI-curated news from your favorite sources",
-  activeId,
-} = Astro.props;
+const { title, description = "RSS feed reader.", activeId } = Astro.props;
 const data = loadFeedData();
-const siteTitle = "Noctua News";
+const siteTitle = "Noctua";
 const baseUrl = getBaseUrl();
 const config = loadConfig();
 const resetMinutesCfg = config?.settings?.website?.reset_time_minutes || 30;
@@ -50,10 +46,6 @@ const resetMinutesCfg = config?.settings?.website?.reset_time_minutes || 30;
         }
 
         document.documentElement.setAttribute("data-theme", actualTheme);
-        document.documentElement.classList.toggle(
-          "dark",
-          actualTheme === "dark",
-        );
       })();
     </script>
     <!-- Disable scroll restoration and start auto-refresh timer -->
@@ -142,49 +134,3 @@ const resetMinutesCfg = config?.settings?.website?.reset_time_minutes || 30;
     </div>
   </body>
 </html>
-
-<style is:global>
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: oklch(var(--bc) / 0.2);
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: oklch(var(--bc) / 0.3);
-  }
-
-  /* Smooth transitions for theme changes */
-  html {
-    transition:
-      background-color 0.3s ease,
-      color 0.3s ease;
-  }
-
-  /* Article card hover effects */
-  .article-card {
-    transition: all 0.2s ease;
-  }
-
-  .article-card:hover {
-    transform: translateY(-2px);
-  }
-
-  /* Read article styling */
-  .article-read {
-    opacity: 0.6;
-  }
-
-  .article-read:hover {
-    opacity: 1;
-  }
-</style>
