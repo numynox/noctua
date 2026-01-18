@@ -27,6 +27,9 @@
   let searchQuery = $state("");
   let hideSeenArticles = $state(true);
   let autoMarkAsSeen = $state(true);
+  // Only render the list after initial storage/prefs are loaded to avoid
+  // a flash of unfiltered articles on first paint.
+  let initialized = $state(false);
 
   // Snapshot of read/seen state at page load. We use these snapshots
   // for filtering so articles marked as seen/read during the current
@@ -91,6 +94,10 @@
 
   // Filtered articles
   let filteredArticles = $derived.by(() => {
+    // If we haven't loaded storage/prefs yet, render nothing to avoid
+    // briefly showing articles that will immediately be hidden.
+    if (!initialized) return [];
+
     let result = articles;
 
     // Filter by hidden feeds (per-context). For this flat list component
@@ -142,17 +149,8 @@
     hideSeenArticles = prefs.hideSeenArticles;
     autoMarkAsSeen = prefs.autoMarkAsSeen;
 
-    // If articles will be hidden, and there is existing read/seen history,
-    // scroll to top after a short delay to prevent auto-marking on load
-    if (
-      hideSeenArticles &&
-      (Object.keys(readArticles).length > 0 ||
-        Object.keys(seenArticles).length > 0)
-    ) {
-      setTimeout(() => {
-        window.scrollTo(0, 0);
-      }, 100);
-    }
+    // Mark initialization complete so filteredArticles can render.
+    initialized = true;
 
     // Listen for filter changes
     window.addEventListener("filtersChanged", ((e: CustomEvent) => {
