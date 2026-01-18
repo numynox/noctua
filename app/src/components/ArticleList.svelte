@@ -57,7 +57,7 @@
         const articleId = element.getAttribute("data-article-id");
 
         // Mark as seen if article is above viewport (scrolled past) and not already marked
-        // but only if it is within one viewport height above the top. This
+        // but only if it is within half the viewport height above the top. This
         // prevents marking items that were jumped far past (e.g., from a
         // navigation or rapid scroll).
         const bottom = rect.bottom;
@@ -65,7 +65,7 @@
           window.innerHeight || document.documentElement.clientHeight || 0;
         if (
           bottom < 0 &&
-          bottom > -viewportH &&
+          bottom > -0.5 * viewportH &&
           articleId &&
           !readArticles[articleId] &&
           !seenArticles[articleId]
