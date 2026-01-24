@@ -44,6 +44,10 @@ sections:
         filter:
           exclude_keywords:
             - "heise+"
+            - "heise-Angebot:"
+      - name: "Caschy's Blog"
+        url: "http://stadt-bremerhaven.de/feed"
+        enabled: true
       - name: "OMG Ubuntu"
         url: "https://omgubuntu.co.uk/feed"
         enabled: true
@@ -60,11 +64,12 @@ sections:
       - name: "Tagesschau Meldungen"
         url: "https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml"
         enabled: true
-      - name: "Tagesschau Investigativ"
-        url: "https://www.tagesschau.de/investigativ/index~rss2.xml"
+      - name: "The Guardian Europe"
+        url: "https://www.theguardian.com/europe/rss"
         enabled: true
-        filter:
-          max_age_hours: 400
+      - name: "The Guardian World"
+        url: "https://www.theguardian.com/world/rss"
+        enabled: true
 
 # AI Summarization settings
 summarization:
