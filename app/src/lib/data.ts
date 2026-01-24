@@ -1,6 +1,6 @@
 /**
  * Data loader for Astro pages
- * Loads the processed feed data from summarize step output
+ * Loads articles from filter/download step and summaries from summarize step
  */
 
 import { existsSync, readFileSync } from "fs";
@@ -9,12 +9,11 @@ import { join } from "path";
 
 const PROJECT_ROOT = join(import.meta.dirname, "..", "..", "..");
 
-// Define fallback paths in order of preference
-const FALLBACK_PATHS = [
-  "output/summarize.json",
-  "output/filter.json",
-  "output/download.json",
-];
+// Define fallback paths for article data (in order of preference)
+const ARTICLE_FALLBACK_PATHS = ["output/filter.json", "output/download.json"];
+
+// Path for summary data (optional)
+const SUMMARY_PATH = "output/summarize.json";
 
 /**
  * Load configuration from config.yaml
@@ -77,45 +76,86 @@ export interface Section {
 export interface FeedData {
   sections: Section[];
   processed_at: string;
-  step: string;
   overall_summary: string | null;
+}
+
+export interface SectionSummary {
+  section_id: string;
+  ai_summary: string | null;
+}
+
+export interface SummaryData {
+  section_summaries: SectionSummary[];
+  overall_summary: string | null;
+  processed_at: string;
+}
+
+/**
+ * Load summary data from disk (optional)
+ */
+function loadSummaryData(): SummaryData | null {
+  const fullPath = join(PROJECT_ROOT, SUMMARY_PATH);
+  if (existsSync(fullPath)) {
+    try {
+      console.log(`Loading summaries from: ${fullPath}`);
+      const rawData = readFileSync(fullPath, "utf-8");
+      return JSON.parse(rawData) as SummaryData;
+    } catch (error) {
+      console.warn(`Failed to load summaries from ${fullPath}:`, error);
+      return null;
+    }
+  }
+  console.log(`No summaries found at ${fullPath}`);
+  return null;
 }
 
 /**
  * Load feed data from disk with fallback paths
  */
 export function loadFeedData(): FeedData {
-  // Check for environment variable override first
-  if (process.env.NOCTUA_DATA_PATH) {
-    if (existsSync(process.env.NOCTUA_DATA_PATH)) {
-      console.log(
-        `Loading data from override: ${process.env.NOCTUA_DATA_PATH}`,
-      );
-      const rawData = readFileSync(process.env.NOCTUA_DATA_PATH, "utf-8");
-      return JSON.parse(rawData) as FeedData;
-    }
-    console.warn(
-      `Override path ${process.env.NOCTUA_DATA_PATH} not found, falling back to defaults`,
-    );
-  }
-
-  // Try paths in order
-  for (const relativePath of FALLBACK_PATHS) {
+  // Try article paths in order (filter.json or download.json)
+  let articleData: FeedData | null = null;
+  for (const relativePath of ARTICLE_FALLBACK_PATHS) {
     const fullPath = join(PROJECT_ROOT, relativePath);
     if (existsSync(fullPath)) {
-      console.log(`Loading data from: ${fullPath}`);
+      console.log(`Loading articles from: ${fullPath}`);
       const rawData = readFileSync(fullPath, "utf-8");
-      return JSON.parse(rawData) as FeedData;
+      articleData = JSON.parse(rawData) as FeedData;
+      break;
     }
   }
 
-  console.warn(`No data found in any of the fallback paths, using empty data`);
-  return {
-    sections: [],
-    processed_at: new Date().toISOString(),
-    step: "none",
-    overall_summary: null,
-  };
+  if (!articleData) {
+    console.warn(
+      `No article data found in any of the fallback paths, using empty data`,
+    );
+    articleData = {
+      sections: [],
+      processed_at: new Date().toISOString(),
+      overall_summary: null,
+    };
+  }
+
+  // Load summaries separately (optional)
+  const summaryData = loadSummaryData();
+
+  // Merge summaries into article data if available
+  if (summaryData) {
+    // Set overall summary
+    articleData.overall_summary = summaryData.overall_summary;
+
+    // Set section summaries
+    for (const section of articleData.sections) {
+      const sectionSummary = summaryData.section_summaries.find(
+        (s) => s.section_id === section.id,
+      );
+      if (sectionSummary) {
+        section.ai_summary = sectionSummary.ai_summary;
+      }
+    }
+  }
+
+  return articleData;
 }
 
 /**

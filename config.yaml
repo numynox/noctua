@@ -44,6 +44,10 @@ sections:
         filter:
           exclude_keywords:
             - "heise+"
+            - "heise-Angebot:"
+      - name: "Caschy's Blog"
+        url: "http://stadt-bremerhaven.de/feed"
+        enabled: true
       - name: "OMG Ubuntu"
         url: "https://omgubuntu.co.uk/feed"
         enabled: true
@@ -60,19 +64,23 @@ sections:
       - name: "Tagesschau Meldungen"
         url: "https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml"
         enabled: true
-      - name: "Tagesschau Investigativ"
-        url: "https://www.tagesschau.de/investigativ/index~rss2.xml"
+      - name: "The Guardian Europe"
+        url: "https://www.theguardian.com/europe/rss"
         enabled: true
-        filter:
-          max_age_hours: 400
+      - name: "The Guardian World"
+        url: "https://www.theguardian.com/world/rss"
+        enabled: true
 
 # AI Summarization settings
 summarization:
   # Model to use with Gemini (1.5-flash is most cost-effective for summarization)
-  model: "gemma-3-27b-it"
+  model: "gemini-2.5-flash-lite" # "gemma-3-27b-it"
   
   # Language for the generated summaries (e.g. English or German)
   output_language: "German"
+  
+  # Cache expiration time in hours - reuse previous summaries if still within this time
+  cache_expiration_time: 24
   
   # Number of most recent articles to analyze together per section
   articles_per_section_summary: 30

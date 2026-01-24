@@ -68,10 +68,28 @@ function loadInputData() {
 }
 
 /**
- * Check if output already exists (skip regeneration if requested)
+ * Check if cached summary is still valid based on cache_expiration_time
  */
-function outputExists() {
-  return existsSync(OUTPUT_PATH);
+function isCacheValid(config) {
+  if (!existsSync(OUTPUT_PATH)) {
+    return false;
+  }
+
+  try {
+    const summaryData = JSON.parse(readFileSync(OUTPUT_PATH, "utf-8"));
+    const processedAt = new Date(summaryData.processed_at);
+    const now = new Date();
+    const hoursSinceProcessed =
+      (now.getTime() - processedAt.getTime()) / (1000 * 60 * 60);
+
+    const cacheExpirationTime =
+      config.summarization?.cache_expiration_time || 24;
+
+    return hoursSinceProcessed < cacheExpirationTime;
+  } catch (error) {
+    console.log(chalk.dim(`  Cache check failed: ${error.message}`));
+    return false;
+  }
 }
 
 /**
@@ -211,15 +229,31 @@ async function summarizeOverall(data, config) {
 async function main() {
   console.log(chalk.bold.blue("\n═══ Noctua: AI Summarization ═══\n"));
 
-  // Check if --skip-if-exists flag is provided
-  const skipIfExists = process.argv.includes("--skip-if-exists");
+  // Load config first
+  const config = loadConfig();
 
-  if (skipIfExists && outputExists()) {
+  // Check for --ignore-cache flag
+  const ignoreCache = process.argv.includes("--ignore-cache");
+
+  // Check if cache is still valid (unless --ignore-cache is specified)
+  if (!ignoreCache && isCacheValid(config)) {
     console.log(
-      chalk.yellow("⚠ Output already exists, skipping summarization"),
+      chalk.green("✓ Using cached summaries (still within expiration time)"),
+    );
+    console.log(
+      chalk.dim(
+        `  Cache expires after ${config.summarization?.cache_expiration_time || 24} hours`,
+      ),
+    );
+    console.log(
+      chalk.dim(`  To ignore cache, use: npm run summarize -- --ignore-cache`),
     );
     console.log(chalk.dim(`  Output: ${OUTPUT_PATH}`));
     return;
+  }
+
+  if (ignoreCache) {
+    console.log(chalk.yellow("⚠ Ignoring cache, regenerating summaries"));
   }
 
   // Check if API key is available
@@ -234,8 +268,7 @@ async function main() {
     return;
   }
 
-  // Load config and data
-  const config = loadConfig();
+  // Load data
   const data = loadInputData();
 
   console.log(
@@ -249,6 +282,7 @@ async function main() {
   );
 
   let apiCallCount = 0;
+  const sectionSummaries = [];
 
   // Process each section
   for (const section of data.sections) {
@@ -256,19 +290,28 @@ async function main() {
 
     // Generate ONE section summary (analyzing N most recent articles)
     try {
-      section.ai_summary = await summarizeSection(section, config);
+      const aiSummary = await summarizeSection(section, config);
+      sectionSummaries.push({
+        section_id: section.id,
+        ai_summary: aiSummary,
+      });
       apiCallCount++;
     } catch (error) {
       console.log(
         chalk.red(`  ✗ Failed to summarize section: ${error.message}`),
       );
+      sectionSummaries.push({
+        section_id: section.id,
+        ai_summary: null,
+      });
     }
   }
 
   // Generate overall summary
   console.log(chalk.bold("\n📊 Overall Summary"));
+  let overallSummary = null;
   try {
-    data.overall_summary = await summarizeOverall(data, config);
+    overallSummary = await summarizeOverall(data, config);
     apiCallCount++;
   } catch (error) {
     console.log(
@@ -276,16 +319,20 @@ async function main() {
     );
   }
 
-  // Update metadata
-  data.processed_at = new Date().toISOString();
-  data.step = "summarize";
+  // Create summary-only output (no articles)
+  const summaryOutput = {
+    section_summaries: sectionSummaries,
+    overall_summary: overallSummary,
+    processed_at: new Date().toISOString(),
+    step: "summarize",
+  };
 
   // Save output
   if (!existsSync(OUTPUT_DIR)) {
     mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
-  writeFileSync(OUTPUT_PATH, JSON.stringify(data, null, 2));
+  writeFileSync(OUTPUT_PATH, JSON.stringify(summaryOutput, null, 2));
 
   // Print summary
   console.log(chalk.green.bold("\n✓ Summarization complete"));

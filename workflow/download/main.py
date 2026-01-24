@@ -139,7 +139,7 @@ def parse_feed_entry(entry: dict, feed_name: str, section_id: str) -> Article:
                 soup = BeautifulSoup(search_text, "html.parser")
                 img = soup.find("img")
                 if img and img.get("src"):
-                    image_url = img["src"]
+                    image_url = str(img["src"])
             except Exception:
                 pass
 

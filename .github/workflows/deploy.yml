@@ -4,15 +4,14 @@ on:
   push:
     branches: [ main ]
   schedule:
-    # 6am UTC and 3pm UTC daily
-    - cron: '0 6 * * *'
-    - cron: '0 15 * * *'
+    # Run every hour at minute 0
+    - cron: '0 * * * *'
   workflow_dispatch:
     inputs:
-      include_summarize:
-        description: 'Include AI summarization step?'
+      ignore_cache:
+        description: 'Ignore summarization cache and regenerate summaries?'
         required: true
-        default: 'true'
+        default: 'false'
         type: choice
         options:
           - 'true'
@@ -58,6 +57,17 @@ jobs:
           npm run install:all
           uv sync
 
+      - name: Restore summarization cache
+        uses: actions/cache/restore@v4
+        id: cache-summaries
+        with:
+          path: output/summarize.json
+          # Use 4-hour time windows to minimize cache entries (6 per day)
+          # Supports cache_expiration_time from 4h to 48h effectively
+          key: noctua-summaries-${{ format('{0:yyyy-MM-dd}', github.event.repository.updated_at || github.event.head_commit.timestamp) }}-${{ (fromJSON(format('{0:HH}', github.event.repository.updated_at || github.event.head_commit.timestamp)) / 4) | int }}
+          restore-keys: |
+            noctua-summaries-
+
       - name: Download feeds
         run: npm run download
         continue-on-error: true
@@ -76,11 +86,24 @@ jobs:
           fi
 
       - name: Summarize feeds (AI)
-        if: (github.event_name != 'workflow_dispatch' || github.event.inputs.include_summarize == 'true') && steps.check_api_key.outputs.has_api_key == 'true'
-        run: npm run summarize
+        if: steps.check_api_key.outputs.has_api_key == 'true'
+        run: |
+          if [ "${{ github.event.inputs.ignore_cache }}" = "true" ]; then
+            npm run summarize -- --ignore-cache
+          else
+            npm run summarize
+          fi
         continue-on-error: true
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Save summarization cache
+        uses: actions/cache/save@v4
+        if: steps.check_api_key.outputs.has_api_key == 'true' && always()
+        with:
+          path: output/summarize.json
+          # Use 4-hour time windows to minimize cache entries (6 per day)
+          key: noctua-summaries-${{ format('{0:yyyy-MM-dd}', github.event.repository.updated_at || github.event.head_commit.timestamp) }}-${{ (fromJSON(format('{0:HH}', github.event.repository.updated_at || github.event.head_commit.timestamp)) / 4) | int }}
 
       - name: Build website
         run: npm run build:website
