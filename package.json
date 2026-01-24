@@ -11,7 +11,7 @@
   "scripts": {
     "download": "uv run python -m workflow.download.main",
     "filter": "uv run python -m workflow.filter.main",
-    "summarize": "cd workflow/summarize && node index.js",
+    "summarize": "node workflow/summarize/index.js",
     "build:website": "cd app && npm run build",
     "dev:website": "cd app && npm run dev",
     "preview:website": "cd app && npm run preview",

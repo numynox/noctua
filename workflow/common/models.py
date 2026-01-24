@@ -71,9 +71,6 @@ class Section(BaseModel):
 
     feeds: list[Feed] = Field(default_factory=list)
 
-    # AI-generated summary for the section
-    ai_summary: str | None = None
-
     @property
     def total_articles(self) -> int:
         return sum(len(f.articles) for f in self.feeds)
@@ -96,9 +93,6 @@ class FeedData(BaseModel):
     processed_at: datetime = Field(default_factory=datetime.now)
     step: str = ""  # Which step generated this data
 
-    # AI-generated overall summary
-    overall_summary: str | None = None
-
     @property
     def total_articles(self) -> int:
         return sum(s.total_articles for s in self.sections)
@@ -117,3 +111,17 @@ class FeedData(BaseModel):
             if section.id == section_id:
                 return section
         return None
+
+
+class SectionSummary(BaseModel):
+    """Summary data for a section"""
+
+    section_id: str
+    ai_summary: str | None = None
+
+
+class SummaryData(BaseModel):
+    """Container for AI-generated summaries only (no articles)"""
+
+    section_summaries: list[SectionSummary] = Field(default_factory=list)
+    overall_summary: str | None = None
