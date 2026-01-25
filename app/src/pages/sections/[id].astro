@@ -2,7 +2,7 @@
 import ArticleList from "../../components/ArticleList.svelte";
 import SummaryBox from "../../components/SummaryBox.svelte";
 import Layout from "../../layouts/Layout.astro";
-import { getSectionArticles, loadFeedData } from "../../lib/data";
+import { getBaseUrl, getSectionArticles, loadFeedData } from "../../lib/data";
 
 export async function getStaticPaths() {
   const data = loadFeedData();
@@ -14,11 +14,16 @@ export async function getStaticPaths() {
 
 const { section, data } = Astro.props;
 const articles = getSectionArticles(data, section.id);
+const baseUrl = getBaseUrl();
 ---
 
 <Layout title={section.name} activeId={section.id}>
   <div class="mb-10">
-    <SummaryBox summary={section.ai_summary} icon={section.icon} />
+    <SummaryBox
+      summary={section.ai_summary}
+      icon={section.icon}
+      baseUrl={baseUrl}
+    />
   </div>
 
   <ArticleList
