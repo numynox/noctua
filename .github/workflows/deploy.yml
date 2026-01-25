@@ -4,8 +4,7 @@ on:
   push:
     branches: [ main ]
   schedule:
-    # Run every hour at minute 0
-    - cron: '0 * * * *'
+    - cron: '17 */2 * * *'
   workflow_dispatch:
     inputs:
       ignore_cache:
@@ -17,14 +16,11 @@ on:
           - 'true'
           - 'false'
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -57,14 +53,13 @@ jobs:
           npm run install:all
           uv sync
 
-      - name: Restore summarization cache
-        uses: actions/cache/restore@v4
-        id: cache-summaries
+      - name: Handle Summarization Cache
+        uses: actions/cache@v4
         with:
           path: output/summarize.json
-          # Use 4-hour time windows to minimize cache entries (6 per day)
-          # Supports cache_expiration_time from 4h to 48h effectively
-          key: noctua-summaries-${{ format('{0:yyyy-MM-dd}', github.event.repository.updated_at || github.event.head_commit.timestamp) }}-${{ (fromJSON(format('{0:HH}', github.event.repository.updated_at || github.event.head_commit.timestamp)) / 4) | int }}
+          # Unique key ensures a new version is saved at the end of every run
+          key: noctua-summaries-${{ github.run_id }}
+          # Restore-keys pulls the most recent entry starting with this prefix
           restore-keys: |
             noctua-summaries-
 
@@ -96,14 +91,6 @@ jobs:
         continue-on-error: true
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-
-      - name: Save summarization cache
-        uses: actions/cache/save@v4
-        if: steps.check_api_key.outputs.has_api_key == 'true' && always()
-        with:
-          path: output/summarize.json
-          # Use 4-hour time windows to minimize cache entries (6 per day)
-          key: noctua-summaries-${{ format('{0:yyyy-MM-dd}', github.event.repository.updated_at || github.event.head_commit.timestamp) }}-${{ (fromJSON(format('{0:HH}', github.event.repository.updated_at || github.event.head_commit.timestamp)) / 4) | int }}
 
       - name: Build website
         run: npm run build:website
