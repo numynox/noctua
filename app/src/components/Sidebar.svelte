@@ -175,7 +175,7 @@
     >
       <div class="relative w-8 h-8 flex-shrink-0">
         <div
-          class="absolute inset-0 bg-primary/50 group-hover:bg-primary rounded-full blur-md transition-all duration-300"
+          class="absolute inset-0 bg-primary/30 group-hover:bg-primary rounded-full blur-md transition-all duration-300"
         ></div>
         <img
           src="{baseUrl}/noctua.png"
