@@ -23,7 +23,7 @@ export async function GET() {
 
   const name = website?.title || "Noctua";
   const description = website?.description || "An RSS feed reader.";
-  const themeColor = website?.theme_color || "#0ea5a4";
+  const themeColor = "#242933";
 
   const manifest = {
     name,
@@ -32,18 +32,18 @@ export async function GET() {
     start_url: base || "/",
     scope: base || "/",
     display: "standalone",
-    background_color: "#0f172a",
+    background_color: "#242933",
     theme_color: themeColor,
     icons: [
       {
-        src: `${base}/icons/icon-192.svg`,
+        src: `${base}/android-chrome-192x192.png`,
         sizes: "192x192",
-        type: "image/svg+xml",
+        type: "image/png",
       },
       {
-        src: `${base}/icons/icon-512.svg`,
+        src: `${base}/android-chrome-512x512.png`,
         sizes: "512x512",
-        type: "image/svg+xml",
+        type: "image/png",
       },
     ],
   };

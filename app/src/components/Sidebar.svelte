@@ -170,10 +170,19 @@
   <div class="p-6">
     <a
       href={baseUrl}
-      class="flex items-center gap-3 text-2xl font-bold hover:text-primary transition-colors"
+      class="flex items-center gap-3 text-2xl font-bold hover:text-primary transition-all duration-300 group"
       onclick={closeMobileMenu}
     >
-      <span>🦉</span>
+      <div class="relative w-8 h-8 flex-shrink-0">
+        <div
+          class="absolute inset-0 bg-primary/50 group-hover:bg-primary rounded-full blur-md transition-all duration-300"
+        ></div>
+        <img
+          src="{baseUrl}/noctua.png"
+          alt="Noctua Logo"
+          class="relative w-full h-full object-contain"
+        />
+      </div>
       <span>Noctua</span>
     </a>
   </div>
