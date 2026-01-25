@@ -67,9 +67,17 @@ sections:
       - name: "The Guardian Europe"
         url: "https://www.theguardian.com/europe/rss"
         enabled: true
+        filter:
+          exclude_keywords:
+            - " v " # Football scores like "Bayern München v Borussia Dortmund"
+            - "Premier League"
       - name: "The Guardian World"
         url: "https://www.theguardian.com/world/rss"
         enabled: true
+        filter:
+          exclude_keywords:
+            - " v " # Football scores like "Bayern München v Borussia Dortmund"
+            - "Premier League"
 
 # AI Summarization settings
 summarization:

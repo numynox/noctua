@@ -68,20 +68,20 @@
 </script>
 
 <article
-  class="cursor-pointer transition-all bg-transparent md:bg-base-200 md:rounded-lg md:shadow-sm md:hover:outline md:hover:outline-2 md:hover:outline-primary"
+  class="card bg-base-100 md:bg-base-200 cursor-pointer transition-all md:rounded-lg md:hover:outline md:hover:outline-2 md:hover:outline-primary"
   class:opacity-60={isRead || isSeen}
   class:grayscale-25={isRead || isSeen}
   onclick={handleCardClick}
 >
-  <div class="p-0 md:p-4">
+  <div class="card-body p-0 md:p-4">
     <!-- Header -->
     <div class="flex items-start gap-2">
       <div class="flex-1">
-        <h3 class="text-sm md:text-base font-bold">
+        <h3 class="text-lg font-bold">
           {article.title}
         </h3>
 
-        <div class="flex items-center gap-2 text-xs text-base-content/60 mt-1">
+        <div class="text-xs text-base-content/60 mt-1 flex flex-wrap gap-2">
           <span>{article.feed_name}</span>
           {#if article.published}
             <span>•</span>
@@ -119,7 +119,7 @@
     </div>
 
     <!-- Summary -->
-    <p class="mt-2 text-sm text-base-content/80 line-clamp-2 md:line-clamp-3">
+    <p class="mt-2 text-sm text-base-content/80 line-clamp-3">
       {article.summary || ""}
     </p>
 
