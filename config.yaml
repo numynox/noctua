@@ -67,14 +67,22 @@ sections:
       - name: "The Guardian Europe"
         url: "https://www.theguardian.com/europe/rss"
         enabled: true
+        filter:
+          exclude_keywords:
+            - " v " # Football scores like "Bayern München v Borussia Dortmund"
+            - "Premier League"
       - name: "The Guardian World"
         url: "https://www.theguardian.com/world/rss"
         enabled: true
+        filter:
+          exclude_keywords:
+            - " v " # Football scores like "Bayern München v Borussia Dortmund"
+            - "Premier League"
 
 # AI Summarization settings
 summarization:
   # Model to use with Gemini (1.5-flash is most cost-effective for summarization)
-  model: "gemini-2.5-flash-lite" # "gemma-3-27b-it"
+  model: "gemini-2.5-flash-lite" # "gemma-3-27b-it" "gemini-2.5-flash-lite"
   
   # Language for the generated summaries (e.g. English or German)
   output_language: "German"
@@ -92,16 +100,14 @@ summarization:
   prompts:
     section: |
       You are analyzing the following recent news articles.
-      Create a concise summary (at most 2 sentences and 50 words) that
-      1. Identifies the most important stories
-      2. Highlights significant developments and trends connecting the stories
-      Present your answer as a single paragraph and as if it was written by a human journalist on the front page of a newspaper.
-      3. Leave out any articles that are not impactful.
+      Formulate the key events as three bullet points containing a short headline that could appear in a newspaper.
+      Each headline should capture the essence of the articles in that section.
+      Output only the  headlines as bullet points, no additional text before or after.
+      Highlight the most important keywords and phrases in bold.
     
     overall: |
-      You are analyzing recent news articles.
-      Create a concise summary (at most 4 sentences and 70 words) that
-      1. Identifies the most important stories in each news section
-      2. Highlights significant developments and trends connecting the stories
-      Present your answer as a single paragraph and as if it was written by a human journalist on the front page of a newspaper.
-      3. Leave out any articles that are not impactful.
+      You are analyzing the following recent news articles.
+      Formulate the key events as four bullet points containing a short headline that could appear in a newspaper.
+      Each headline should capture the essence of the articles in that section.
+      Output only the  headlines as bullet points, no additional text before or after.
+      Highlight the most important keywords and phrases in bold.

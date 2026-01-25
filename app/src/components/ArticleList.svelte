@@ -247,7 +247,7 @@
     Showing {filteredArticles.length} of {articles.length} articles
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-6">
     {#each filteredArticles as article}
       <div data-article-id={article.id}>
         <ArticleCard

@@ -165,7 +165,7 @@ async function summarizeSection(section, config) {
   const prompt =
     config.summarization.prompts.section +
     `\n\nOutput language: ${config.summarization.output_language || "English"}. The entire summary must be written in this language.` +
-    "\n\nIMPORTANT: Use ONLY bold text (**keyword**) for markdown formatting. All other text must be plain text. Highlight the most important keywords and phrases in bold.";
+    "\n\nIMPORTANT: Use ONLY bold text (**keyword**) and bullet points (- text) for markdown formatting. All other text must be plain text. Highlight the most important keywords and phrases in bold.";
 
   // Build comprehensive content with titles and summaries
   const content = topArticles
@@ -206,7 +206,7 @@ async function summarizeOverall(data, config) {
   const prompt =
     config.summarization.prompts.overall +
     `\n\nOutput language: ${config.summarization.output_language || "English"}. The entire summary must be written in this language.` +
-    "\n\nIMPORTANT: Use ONLY bold text (**keyword**) for markdown formatting. All other text must be plain text. Highlight the most important keywords and phrases in bold.";
+    "\n\nIMPORTANT: Use ONLY bold text (**keyword**) and bullet points (- text) for markdown formatting. All other text must be plain text. Highlight the most important keywords and phrases in bold.";
   const content = allArticles
     .map(
       (a, i) =>
@@ -293,7 +293,7 @@ async function main() {
       const aiSummary = await summarizeSection(section, config);
       sectionSummaries.push({
         section_id: section.id,
-        ai_summary: aiSummary,
+        summary: aiSummary,
       });
       apiCallCount++;
     } catch (error) {
@@ -302,7 +302,7 @@ async function main() {
       );
       sectionSummaries.push({
         section_id: section.id,
-        ai_summary: null,
+        summary: null,
       });
     }
   }
@@ -322,7 +322,7 @@ async function main() {
   // Create summary-only output (no articles)
   const summaryOutput = {
     section_summaries: sectionSummaries,
-    overall_summary: overallSummary,
+    summary: overallSummary,
     processed_at: new Date().toISOString(),
     step: "summarize",
   };
