@@ -110,7 +110,7 @@
           <img
             src={article.image_url}
             alt=""
-            class="w-16 h-16 md:w-24 md:h-24 object-cover rounded-md bg-base-300"
+            class="w-20 h-20 md:w-24 md:h-24 object-cover rounded-md bg-base-300"
             loading="lazy"
             onerror={handleImageError}
           />
@@ -119,7 +119,7 @@
     </div>
 
     <!-- Summary -->
-    <p class="mt-2 text-sm text-base-content/80 line-clamp-3">
+    <p class="text-sm text-base-content/80 line-clamp-3">
       {article.summary || ""}
     </p>
 

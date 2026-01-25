@@ -70,23 +70,23 @@ export interface Section {
   description: string;
   icon: string;
   feeds: Feed[];
-  ai_summary: string | null;
+  summary: string | null;
 }
 
 export interface FeedData {
   sections: Section[];
   processed_at: string;
-  overall_summary: string | null;
+  summary: string | null;
 }
 
 export interface SectionSummary {
   section_id: string;
-  ai_summary: string | null;
+  summary: string | null;
 }
 
 export interface SummaryData {
   section_summaries: SectionSummary[];
-  overall_summary: string | null;
+  summary: string | null;
   processed_at: string;
 }
 
@@ -132,7 +132,7 @@ export function loadFeedData(): FeedData {
     articleData = {
       sections: [],
       processed_at: new Date().toISOString(),
-      overall_summary: null,
+      summary: null,
     };
   }
 
@@ -142,7 +142,7 @@ export function loadFeedData(): FeedData {
   // Merge summaries into article data if available
   if (summaryData) {
     // Set overall summary
-    articleData.overall_summary = summaryData.overall_summary;
+    articleData.summary = summaryData.summary;
 
     // Set section summaries
     for (const section of articleData.sections) {
@@ -150,7 +150,7 @@ export function loadFeedData(): FeedData {
         (s) => s.section_id === section.id,
       );
       if (sectionSummary) {
-        section.ai_summary = sectionSummary.ai_summary;
+        section.summary = sectionSummary.summary;
       }
     }
   }

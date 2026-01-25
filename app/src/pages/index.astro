@@ -11,12 +11,7 @@ const baseUrl = getBaseUrl();
 
 <Layout title="Home" activeId="home">
   <!-- Overall Summary -->
-  <SummaryBox
-    summary={data.overall_summary}
-    icon="🦉"
-    baseUrl={baseUrl}
-    client:load
-  />
+  <SummaryBox summary={data.summary} icon="🦉" baseUrl={baseUrl} client:load />
 
   <!-- Articles List -->
   <ArticleList articles={allArticles} sections={data.sections} client:load />

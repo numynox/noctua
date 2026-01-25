@@ -18,13 +18,12 @@ const baseUrl = getBaseUrl();
 ---
 
 <Layout title={section.name} activeId={section.id}>
-  <div class="mb-10">
-    <SummaryBox
-      summary={section.ai_summary}
-      icon={section.icon}
-      baseUrl={baseUrl}
-    />
-  </div>
+  <SummaryBox
+    summary={section.summary}
+    icon={section.icon}
+    baseUrl={baseUrl}
+    client:load
+  />
 
   <ArticleList
     articles={articles}

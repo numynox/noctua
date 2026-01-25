@@ -9,8 +9,18 @@
 
   let { summary, icon = "✨", baseUrl = "" }: Props = $props();
 
-  let summaryHtml = $derived(summary ? marked.parse(summary) : "");
-  let isOwlIcon = $derived(icon === "🦉");
+  // Normalize escaped newlines and parse markdown into HTML
+  const normalizedSummary = summary ? summary.replace(/\\n/g, "\n") : "";
+
+  // Parse markdown into HTML, then add Tailwind list classes by post-processing
+  let summaryHtml = "";
+  if (normalizedSummary) {
+    const raw = marked.parse(normalizedSummary);
+    summaryHtml = raw
+      .replace(/<ul>/g, '<ul class="list-disc ml-6">')
+      .replace(/<ol>/g, '<ol class="list-decimal ml-6">');
+  }
+  let isOwlIcon = icon === "🦉";
 </script>
 
 {#if summary}
@@ -26,7 +36,7 @@
             class="absolute inset-0 bg-primary/30 rounded-full blur-lg"
           ></div>
           <img
-            src="{baseUrl}/noctua.png"
+            src={`${baseUrl}/noctua.png`}
             alt="Noctua"
             class="relative w-full h-full object-contain"
           />
