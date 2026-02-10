@@ -16,7 +16,16 @@
     "dev:website": "cd app && npm run dev",
     "preview:website": "cd app && npm run preview",
     "workflow:all": "npm run download && npm run filter && npm run summarize && npm run build:website",
-    "install:all": "npm install"
+    "install:all": "npm install",
+    "supabase:login": "npx supabase login",
+    "supabase:status": "npx supabase status",
+    "supabase:projects:list": "npx supabase projects list",
+    "supabase:link": "npx supabase link",
+    "supabase:start": "npx supabase start",
+    "supabase:stop": "npx supabase stop",
+    "supabase:functions:serve": "npx supabase functions serve",
+    "supabase:functions:list": "npx supabase functions list",
+    "supabase:functions:deploy": "npx supabase functions deploy"
   },
   "keywords": [
     "rss",

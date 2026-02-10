@@ -229,3 +229,12 @@ marimo/_lsp/
 __marimo__/
 !app/src/lib/
 !app/src/lib/
+
+# Supabase (CLI / Edge Functions)
+# Ignore local CLI cache, local env files and node_modules inside functions
+supabase/.cache/
+supabase/.env
+supabase/.temp/
+supabase/.branches/
+supabase/config.toml
+supabase/functions/**/node_modules/
