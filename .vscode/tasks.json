@@ -2,65 +2,6 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Download Feeds",
-            "type": "shell",
-            "command": "uv",
-            "args": [
-                "run",
-                "python",
-                "-m",
-                "workflow.download.main"
-            ],
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Filter Feeds",
-            "type": "shell",
-            "command": "uv",
-            "args": [
-                "run",
-                "python",
-                "-m",
-                "workflow.filter.main"
-            ],
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": [],
-            "dependsOn": [
-                "Download Feeds"
-            ]
-        },
-        {
-            "label": "Summarize (AI)",
-            "type": "shell",
-            "command": "node",
-            "args": [
-                "workflow/summarize/index.js"
-            ],
-            "options": {
-                "env": {
-                    "GEMINI_API_KEY": "${env:GEMINI_API_KEY}"
-                }
-            },
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": [],
-            "dependsOn": [
-                "Filter Feeds"
-            ]
-        },
-        {
             "label": "Build Website",
             "type": "shell",
             "command": "npm",
@@ -114,46 +55,6 @@
                     "beginsPattern": ".",
                     "endsPattern": "Local:.*http://localhost:\\d+"
                 }
-            }
-        },
-        {
-            "label": "Run Full Pipeline",
-            "type": "shell",
-            "command": "npm",
-            "args": [
-                "run",
-                "workflow:all"
-            ],
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Install Dependencies",
-            "type": "shell",
-            "command": "npm",
-            "args": [
-                "run",
-                "install:all"
-            ],
-            "group": "none",
-            "presentation": {
-                "reveal": "always"
-            }
-        },
-        {
-            "label": "Install Python Dependencies",
-            "type": "shell",
-            "command": "uv",
-            "args": [
-                "sync"
-            ],
-            "group": "none",
-            "presentation": {
-                "reveal": "always"
             }
         }
     ]
