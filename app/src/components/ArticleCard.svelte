@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Article } from "../lib/data";
+  import type { Article } from "../lib/types";
 
   interface Props {
     article: Article;

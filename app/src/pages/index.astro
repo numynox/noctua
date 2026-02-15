@@ -1,13 +1,8 @@
 ---
-import ArticleList from "../components/ArticleList.svelte";
+import ArticleFeedView from "../components/ArticleFeedView.svelte";
 import Layout from "../layouts/Layout.astro";
-import { getAllArticles, loadFeedData } from "../lib/data";
-
-const data = loadFeedData();
-const allArticles = getAllArticles(data);
 ---
 
 <Layout title="Home" activeId="home">
-  <!-- Articles List -->
-  <ArticleList articles={allArticles} sections={data.sections} client:load />
+  <ArticleFeedView client:load />
 </Layout>

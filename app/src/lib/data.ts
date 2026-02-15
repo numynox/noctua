@@ -1,136 +1,226 @@
-/**
- * Data loader for Astro pages
- * Loads articles from filter/download step
- */
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { getSupabaseClient } from "./supabase";
+import type { Article, Feed, Section, UserContent } from "./types";
 
-import { existsSync, readFileSync } from "fs";
-import { load } from "js-yaml";
-import { join } from "path";
+export async function getSession(): Promise<Session | null> {
+  const supabase = getSupabaseClient();
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
 
-const PROJECT_ROOT = join(import.meta.dirname, "..", "..", "..");
-
-// Define fallback paths for article data (in order of preference)
-const ARTICLE_FALLBACK_PATHS = ["output/filter.json", "output/download.json"];
-
-/**
- * Load configuration from config.yaml
- */
-export function loadConfig() {
-  const configPath = join(PROJECT_ROOT, "config.yaml");
-  if (existsSync(configPath)) {
-    const configData = readFileSync(configPath, "utf-8");
-    return load(configData) as any;
+  if (error) {
+    throw error;
   }
-  return {};
+
+  return session;
 }
 
-/**
- * Get the base URL from configuration
- */
-export function getBaseUrl(): string {
-  const config = loadConfig();
-  return config.settings?.website?.base_url || "/";
+export async function signInWithPassword(email: string, password: string) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }
 
-export interface Article {
-  id: string;
-  title: string;
-  url: string;
-  published: string | null;
-  updated: string | null;
-  author: string | null;
-  summary: string | null;
-  image_url: string | null;
-  feed_name: string;
-  section_id: string;
-  tags: string[];
+export async function signOut() {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    throw error;
+  }
 }
 
-export interface Feed {
-  id: string;
-  name: string;
-  url: string;
-  section_id: string;
-  title: string | null;
-  description: string | null;
-  link: string | null;
-  last_updated: string | null;
-  articles: Article[];
-  fetch_status: string;
-  fetch_error: string | null;
-  fetched_at: string | null;
+export function onAuthStateChange(
+  callback: (event: AuthChangeEvent, session: Session | null) => void,
+) {
+  const supabase = getSupabaseClient();
+  return supabase.auth.onAuthStateChange(callback);
 }
 
-export interface Section {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  feeds: Feed[];
+async function ensureProfile(userId: string) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error(
+      "No profile row found for this user. Verify the auth profile trigger migration is applied.",
+    );
+  }
 }
 
-export interface FeedData {
-  sections: Section[];
-  processed_at: string;
+export async function fetchSectionsForUser(userId: string): Promise<Section[]> {
+  await ensureProfile(userId);
+
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("sections")
+    .select(
+      `
+      id,
+      title,
+      icon,
+      sections_feeds (
+        feed_id,
+        feeds (
+          id,
+          name,
+          url,
+          enabled
+        )
+      )
+    `,
+    )
+    .eq("user_id", userId)
+    .order("id", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || []).map((section: any) => {
+    const feeds: Feed[] = (section.sections_feeds || [])
+      .map((joinRow: any) => joinRow.feeds)
+      .filter((feed: any) => feed && feed.enabled !== false)
+      .map((feed: any) => ({
+        id: String(feed.id),
+        name: feed.name,
+        url: feed.url,
+      }));
+
+    return {
+      id: String(section.id),
+      name: section.title,
+      icon: section.icon || "🦉",
+      feeds,
+    };
+  });
 }
 
-/**
- * Load feed data from disk with fallback paths
- */
-export function loadFeedData(): FeedData {
-  // Try article paths in order (filter.json or download.json)
-  let articleData: FeedData | null = null;
-  for (const relativePath of ARTICLE_FALLBACK_PATHS) {
-    const fullPath = join(PROJECT_ROOT, relativePath);
-    if (existsSync(fullPath)) {
-      console.log(`Loading articles from: ${fullPath}`);
-      const rawData = readFileSync(fullPath, "utf-8");
-      articleData = JSON.parse(rawData) as FeedData;
-      break;
+export async function fetchHomeFeedsForUser(userId: string): Promise<Feed[]> {
+  await ensureProfile(userId);
+
+  const supabase = getSupabaseClient();
+  const { data, error } = await (supabase as any).rpc("get_user_home_feeds", {
+    p_user_id: userId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data as any[]) || []).map((feed: any) => ({
+    id: String(feed.id),
+    name: feed.name,
+    url: feed.url,
+  }));
+}
+
+export async function fetchArticlesForSections(
+  sections: Section[],
+  selectedSectionId?: string | null,
+  limit = 300,
+): Promise<Article[]> {
+  const scopedSections = selectedSectionId
+    ? sections.filter((section) => section.id === selectedSectionId)
+    : sections;
+
+  const feedMap = new Map<string, Feed>();
+  for (const section of scopedSections) {
+    for (const feed of section.feeds) {
+      feedMap.set(feed.id, feed);
     }
   }
 
-  if (!articleData) {
-    console.warn(
-      `No article data found in any of the fallback paths, using empty data`,
-    );
-    articleData = {
+  const feedIds = Array.from(feedMap.keys());
+  if (feedIds.length === 0) {
+    return [];
+  }
+
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("articles")
+    .select(
+      "id,feed_id,title,url,published_at,updated_at,author,summary,image_url,tags",
+    )
+    .in("feed_id", feedIds)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || []).map((article: any) => {
+    const feedId = String(article.feed_id);
+    const feed = feedMap.get(feedId);
+
+    return {
+      id: String(article.id),
+      feed_id: feedId,
+      feed_name: feed?.name || "Unknown feed",
+      title: article.title || "Untitled",
+      url: article.url,
+      published: article.published_at,
+      updated: article.updated_at,
+      author: article.author,
+      summary: article.summary,
+      image_url: article.image_url,
+      tags: Array.isArray(article.tags) ? article.tags : [],
+    };
+  });
+}
+
+export async function loadUserContent(
+  selectedSectionId?: string | null,
+): Promise<UserContent> {
+  const session = await getSession();
+  if (!session?.user) {
+    return {
+      isLoggedIn: false,
       sections: [],
-      processed_at: new Date().toISOString(),
+      articles: [],
+      selectedSectionId: null,
     };
   }
 
-  return articleData;
+  const sections = await fetchSectionsForUser(session.user.id);
+  const isValidSelectedSection =
+    !!selectedSectionId &&
+    sections.some((section) => section.id === selectedSectionId);
+  const normalizedSelectedSectionId = isValidSelectedSection
+    ? selectedSectionId!
+    : null;
+  const articles = await fetchArticlesForSections(
+    sections,
+    normalizedSelectedSectionId,
+  );
+
+  return {
+    isLoggedIn: true,
+    sections,
+    articles,
+    selectedSectionId: normalizedSelectedSectionId,
+  };
 }
 
-/**
- * Get all articles sorted by date
- */
-export function getAllArticles(data: FeedData): Article[] {
-  return data.sections
-    .flatMap((s) => s.feeds.flatMap((f) => f.articles))
-    .sort(
-      (a, b) =>
-        new Date(b.published || 0).getTime() -
-        new Date(a.published || 0).getTime(),
-    );
-}
-
-/**
- * Get articles for a specific section
- */
-export function getSectionArticles(
-  data: FeedData,
-  sectionId: string,
-): Article[] {
-  const section = data.sections.find((s) => s.id === sectionId);
-  if (!section) return [];
-
-  return section.feeds
-    .flatMap((f) => f.articles)
-    .sort(
-      (a, b) =>
-        new Date(b.published || 0).getTime() -
-        new Date(a.published || 0).getTime(),
-    );
+export function getLoginHref(baseUrl = "/") {
+  const normalizedBase = baseUrl === "/" ? "" : baseUrl.replace(/\/$/, "");
+  return `${normalizedBase}/login`;
 }

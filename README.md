@@ -215,6 +215,37 @@ Trigger manually from Actions tab with options:
 | `NOCTUA_OUTPUT_DIR` | Base output directory  | Optional         |
 | `NOCTUA_BASE_URL`   | Website base URL       | For GitHub Pages |
 
+### Supabase frontend configuration
+
+The Astro app in `app/` now reads data directly from Supabase in the browser.
+
+Set these variables in your local `.env` (or shell):
+
+```bash
+PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
+```
+
+For local Supabase CLI, `PUBLIC_SUPABASE_URL` is typically:
+
+```bash
+PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+```
+
+Apply DB migrations (including the auth profile trigger):
+
+```bash
+npx supabase db reset
+# or against remote
+npx supabase db push
+```
+
+Required manual Supabase dashboard setup:
+
+- Enable email/password authentication provider
+- Set allowed redirect URLs for local dev and GitHub Pages
+- Ensure repository variables `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY` are set for GitHub Actions
+
 ## 🌐 User Features
 
 The generated website includes:
