@@ -1,6 +1,6 @@
 /**
  * Data loader for Astro pages
- * Loads articles from filter/download step and summaries from summarize step
+ * Loads articles from filter/download step
  */
 
 import { existsSync, readFileSync } from "fs";
@@ -11,9 +11,6 @@ const PROJECT_ROOT = join(import.meta.dirname, "..", "..", "..");
 
 // Define fallback paths for article data (in order of preference)
 const ARTICLE_FALLBACK_PATHS = ["output/filter.json", "output/download.json"];
-
-// Path for summary data (optional)
-const SUMMARY_PATH = "output/summarize.json";
 
 /**
  * Load configuration from config.yaml
@@ -70,43 +67,11 @@ export interface Section {
   description: string;
   icon: string;
   feeds: Feed[];
-  summary: string | null;
 }
 
 export interface FeedData {
   sections: Section[];
   processed_at: string;
-  summary: string | null;
-}
-
-export interface SectionSummary {
-  section_id: string;
-  summary: string | null;
-}
-
-export interface SummaryData {
-  section_summaries: SectionSummary[];
-  summary: string | null;
-  processed_at: string;
-}
-
-/**
- * Load summary data from disk (optional)
- */
-function loadSummaryData(): SummaryData | null {
-  const fullPath = join(PROJECT_ROOT, SUMMARY_PATH);
-  if (existsSync(fullPath)) {
-    try {
-      console.log(`Loading summaries from: ${fullPath}`);
-      const rawData = readFileSync(fullPath, "utf-8");
-      return JSON.parse(rawData) as SummaryData;
-    } catch (error) {
-      console.warn(`Failed to load summaries from ${fullPath}:`, error);
-      return null;
-    }
-  }
-  console.log(`No summaries found at ${fullPath}`);
-  return null;
 }
 
 /**
@@ -132,27 +97,7 @@ export function loadFeedData(): FeedData {
     articleData = {
       sections: [],
       processed_at: new Date().toISOString(),
-      summary: null,
     };
-  }
-
-  // Load summaries separately (optional)
-  const summaryData = loadSummaryData();
-
-  // Merge summaries into article data if available
-  if (summaryData) {
-    // Set overall summary
-    articleData.summary = summaryData.summary;
-
-    // Set section summaries
-    for (const section of articleData.sections) {
-      const sectionSummary = summaryData.section_summaries.find(
-        (s) => s.section_id === section.id,
-      );
-      if (sectionSummary) {
-        section.summary = sectionSummary.summary;
-      }
-    }
   }
 
   return articleData;

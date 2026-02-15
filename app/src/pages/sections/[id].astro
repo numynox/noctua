@@ -1,8 +1,7 @@
 ---
 import ArticleList from "../../components/ArticleList.svelte";
-import SummaryBox from "../../components/SummaryBox.svelte";
 import Layout from "../../layouts/Layout.astro";
-import { getBaseUrl, getSectionArticles, loadFeedData } from "../../lib/data";
+import { getSectionArticles, loadFeedData } from "../../lib/data";
 
 export async function getStaticPaths() {
   const data = loadFeedData();
@@ -14,17 +13,9 @@ export async function getStaticPaths() {
 
 const { section, data } = Astro.props;
 const articles = getSectionArticles(data, section.id);
-const baseUrl = getBaseUrl();
 ---
 
 <Layout title={section.name} activeId={section.id}>
-  <SummaryBox
-    summary={section.summary}
-    icon={section.icon}
-    baseUrl={baseUrl}
-    client:load
-  />
-
   <ArticleList
     articles={articles}
     sections={[section]}
