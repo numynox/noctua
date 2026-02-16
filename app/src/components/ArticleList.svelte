@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { Article, Section } from "../lib/data";
   import type { ArticleStatuses } from "../lib/storage";
   import {
     getFilters,
@@ -11,6 +10,7 @@
     markAsRead,
     markAsSeen,
   } from "../lib/storage";
+  import type { Article, Section } from "../lib/types";
   import ArticleCard from "./ArticleCard.svelte";
 
   interface Props {
@@ -103,12 +103,8 @@
     // Filter by hidden feeds (per-context). For this flat list component
     // use the 'home' context for hidden feeds.
     if (hiddenFeeds.size > 0) {
-      result = result.filter((a) => {
-        const section = sections.find((s) => s.id === a.section_id);
-        const feed = section?.feeds.find((f) => f.name === a.feed_name);
-        const contextHidden = getHiddenFeedsForContext(contextId);
-        return !feed || !contextHidden.has(feed.id);
-      });
+      const contextHidden = getHiddenFeedsForContext(contextId);
+      result = result.filter((a) => !contextHidden.has(a.feed_id));
     }
 
     // Filter by read/seen status (hide articles that were read/seen at page load)

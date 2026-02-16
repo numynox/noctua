@@ -1,6 +1,6 @@
 ---
 import Sidebar from "../components/Sidebar.svelte";
-import { loadFeedData, getBaseUrl, loadConfig } from "../lib/data";
+import { getBaseUrl, loadConfig } from "../lib/config";
 import "../styles/app.css";
 
 interface Props {
@@ -11,23 +11,16 @@ interface Props {
 
 const baseUrl = getBaseUrl();
 const config = loadConfig();
-const data = loadFeedData();
 
 const siteTitle = config?.settings?.website?.title || "Noctua";
 const siteDescription =
   config?.settings?.website?.description || "An RSS feed reader.";
 const { title, description = siteDescription, activeId } = Astro.props;
-const resetMinutesCfg = config?.settings?.website?.reset_time_minutes || 30;
 const themeColor = "#242933";
 ---
 
 <!doctype html>
-<html
-  lang="en"
-  data-theme="dark"
-  data-base-url={baseUrl}
-  data-reset-minutes={resetMinutesCfg}
->
+<html lang="en" data-theme="dark" data-base-url={baseUrl}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -75,7 +68,7 @@ const themeColor = "#242933";
         document.documentElement.setAttribute("data-theme", actualTheme);
       })();
     </script>
-    <!-- Disable scroll restoration and start auto-refresh timer -->
+    <!-- Disable scroll restoration -->
     <script is:inline>
       (function () {
         // Disable automatic scroll restoration which interferes with article
@@ -90,53 +83,6 @@ const themeColor = "#242933";
         } catch (e) {
           // ignore
         }
-
-        // Auto-refresh: reload the page after `resetMinutes` minutes since
-        // last page load or last article read. The `markAsRead` function in
-        // storage.ts dispatches a `noctua:activity` event to reset this timer.
-        const resetMinutes = Number(
-          (typeof document !== "undefined" &&
-            document.documentElement.dataset.resetMinutes) ||
-            0,
-        );
-
-        if (!resetMinutes) return;
-
-        let timerId = null;
-
-        function scheduleReload() {
-          if (timerId) {
-            clearTimeout(timerId);
-          }
-          const ms = Number(resetMinutes) * 60 * 1000;
-          if (!ms || ms <= 0) return;
-          timerId = setTimeout(() => {
-            try {
-              // Use replace to avoid adding an extra history entry; add a
-              // timestamp query param to help bypass caches.
-              const url = new URL(window.location.href);
-              url.searchParams.set("_noctua_reload", String(Date.now()));
-              window.location.replace(url.toString());
-            } catch (e) {
-              // fallback to simple reload
-              window.location.reload();
-            }
-          }, ms);
-        }
-
-        // Start timer on load
-        scheduleReload();
-
-        // Reset timer when user marks an article read; storage.ts dispatches
-        // this event on activity.
-        window.addEventListener("noctua:activity", () => {
-          scheduleReload();
-        });
-
-        // Clean up when unloading
-        window.addEventListener("beforeunload", () => {
-          if (timerId) clearTimeout(timerId);
-        });
       })();
     </script>
 
@@ -164,13 +110,7 @@ const themeColor = "#242933";
   <body class="bg-base-100 text-base-content overflow-x-hidden">
     <div class="flex min-h-screen">
       <!-- Sidebar -->
-      <Sidebar
-        sections={data.sections}
-        activeId={activeId}
-        processedAt={data.processed_at}
-        baseUrl={baseUrl}
-        client:load
-      />
+      <Sidebar activeId={activeId} baseUrl={baseUrl} client:load />
 
       <!-- Main Content Area -->
       <div class="flex-1 flex flex-col min-w-0">

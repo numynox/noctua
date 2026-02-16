@@ -1,0 +1,23 @@
+---
+import LoginPanel from "../components/LoginPanel.svelte";
+import { getBaseUrl } from "../lib/config";
+import "../styles/app.css";
+
+const baseUrl = getBaseUrl();
+const siteTitle = "Noctua";
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark" data-base-url={baseUrl}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Sign in to Noctua" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>Login | {siteTitle}</title>
+  </head>
+  <body class="bg-base-100 text-base-content overflow-x-hidden">
+    <LoginPanel client:load />
+  </body>
+</html>

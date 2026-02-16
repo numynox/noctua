@@ -27,6 +27,7 @@ export default defineConfig({
 
   // Vite configuration
   vite: {
+    envDir: "..",
     plugins: [tailwindcss()],
     build: {
       // Ensure assets are inlined or properly referenced
