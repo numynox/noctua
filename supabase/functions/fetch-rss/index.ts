@@ -6,6 +6,30 @@ import type { FeedRecord, FeedResult } from "./lib/types.ts";
 
 Deno.serve(async (req) => {
   try {
+    const invokeSecret = Deno.env.get("FETCH_RSS_INVOKE_SECRET") || "";
+    if (!invokeSecret) {
+      return new Response(
+        JSON.stringify({ error: "FETCH_RSS_INVOKE_SECRET is not configured" }) +
+          "\n",
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const authHeader = req.headers.get("authorization") || "";
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice("Bearer ".length).trim()
+      : "";
+
+    if (!token || token !== invokeSecret) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }) + "\n", {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);

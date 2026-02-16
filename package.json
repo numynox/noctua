@@ -24,7 +24,7 @@
     "supabase:db:dump:data": "npx supabase db dump --data-only --schema public --file supabase/remote_data.sql",
     "supabase:start": "npx supabase start",
     "supabase:stop": "npx supabase stop",
-    "supabase:functions:serve": "npx supabase functions serve",
+    "supabase:functions:serve": "npx supabase functions serve --env-file .env",
     "supabase:functions:list": "npx supabase functions list",
     "supabase:functions:deploy": "npx supabase functions deploy"
   },

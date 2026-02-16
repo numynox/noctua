@@ -49,5 +49,30 @@
         "**/output": true,
         "supabase/.branches": true,
         "supabase/.temp": true
-    }
+    },
+    "VsCodeTaskButtons.tasks": [
+        {
+            "label": "Build Website",
+            "task": "Build Website",
+        },
+        {
+            "label": "Dev Server",
+            "task": "Dev Server",
+            "color": "warning"
+        },
+        {
+            "label": "Supabase",
+            "task": "Supabase",
+            "color": "error"
+        },
+        {
+            "label": "Supabase Functions",
+            "task": "Supabase Functions",
+            "color": "error"
+        },
+        {
+            "label": "Fetch RSS",
+            "task": "Fetch RSS"
+        }
+    ]
 }

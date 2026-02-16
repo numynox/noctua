@@ -18,7 +18,7 @@
             },
             "presentation": {
                 "reveal": "always",
-                "panel": "new"
+                "panel": "dedicated"
             },
             "problemMatcher": [],
             "dependsOn": [
@@ -39,23 +39,59 @@
             "isBackground": true,
             "presentation": {
                 "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": {
-                "pattern": {
-                    "regexp": "^([^\\s].*)\\((\\d+|\\d+,\\d+|\\d+,\\d+,\\d+,\\d+)\\):\\s+(error|warning|info)\\s+(TS\\d+)\\s*:\\s*(.*)$",
-                    "file": 1,
-                    "location": 2,
-                    "severity": 3,
-                    "code": 4,
-                    "message": 5
-                },
-                "background": {
-                    "activeOnStart": true,
-                    "beginsPattern": ".",
-                    "endsPattern": "Local:.*http://localhost:\\d+"
-                }
+                "panel": "dedicated"
             }
+        },
+        {
+            "label": "Supabase",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "run",
+                "supabase:start"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Supabase Functions",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "run",
+                "supabase:functions:serve"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Fetch RSS",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "set -a; [ -f ./.env ] && . ./.env; set +a; if [ -z \"${FETCH_RSS_INVOKE_SECRET:-}\" ]; then echo \"FETCH_RSS_INVOKE_SECRET is not set (.env or environment)\"; exit 1; fi; curl -L -X POST \"http://127.0.0.1:54321/functions/v1/fetch-rss\" -H \"Authorization: Bearer ${FETCH_RSS_INVOKE_SECRET}\" -H \"Content-Type: application/json\" --data \"{\\\"name\\\":\\\"Functions\\\"}\""
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
         }
     ]
 }
