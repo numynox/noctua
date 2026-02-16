@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PUBLIC_SUPABASE_URL: ${{ vars.PUBLIC_SUPABASE_URL }}
-      PUBLIC_SUPABASE_ANON_KEY: ${{ vars.PUBLIC_SUPABASE_ANON_KEY }}
+      PUBLIC_SUPABASE_KEY: ${{ vars.PUBLIC_SUPABASE_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
