@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import {
+    clearReadArticlesForUser,
     getLoginHref,
     getSession,
     onAuthStateChange,
     signOut,
   } from "../lib/data";
   import {
-    clearReadHistory,
     clearSeenHistory,
     getPreferences,
     getTheme,
@@ -147,15 +147,24 @@
     setTheme(theme);
   }
 
-  function handleClearHistory() {
+  async function handleClearHistory() {
     if (
       confirm(
         "Are you sure you want to clear your read article history? This cannot be undone.",
       )
     ) {
-      clearReadHistory();
-      clearSeenHistory();
-      alert("Read and seen history cleared.");
+      try {
+        if (userId) {
+          await clearReadArticlesForUser(userId);
+        }
+
+        clearSeenHistory();
+        window.dispatchEvent(new CustomEvent("readHistoryCleared"));
+        alert("Read and seen history cleared.");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        alert(`Failed to clear history: ${message}`);
+      }
     }
   }
 

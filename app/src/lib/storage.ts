@@ -9,7 +9,6 @@ const isBrowser = (): boolean => typeof window !== "undefined";
 // Storage keys
 const STORAGE_KEYS = {
   THEME: "noctua_theme",
-  READ_ARTICLES: "noctua_read_articles",
   SEEN_ARTICLES: "noctua_seen_articles",
   FILTERS: "noctua_filters",
   PREFERENCES: "noctua_preferences",
@@ -23,18 +22,8 @@ export interface UserPreferences {
   autoMarkAsSeen: boolean;
 }
 
-/**
- * Article status with timestamp
- */
-export interface ArticleStatus {
-  timestamp: string; // ISO string
-}
-
-/**
- * Article statuses stored in local storage
- */
-export interface ArticleStatuses {
-  [articleId: string]: ArticleStatus;
+export interface SeenArticleStatuses {
+  [articleId: string]: true;
 }
 
 /**
@@ -177,40 +166,15 @@ function applyTheme(theme: string): void {
   }
 }
 
-// ============ Read Articles ============
-
-export function getReadArticles(): ArticleStatuses {
-  return getStorageItem(STORAGE_KEYS.READ_ARTICLES, {});
-}
-
-export function markAsRead(articleId: string): void {
-  const read = getReadArticles();
-  read[articleId] = { timestamp: new Date().toISOString() };
-  setStorageItem(STORAGE_KEYS.READ_ARTICLES, read);
-  dispatchEventSafe("noctua:activity");
-}
-
-export function clearReadHistory(): void {
-  if (!isBrowser()) return;
-  try {
-    localStorage.removeItem(STORAGE_KEYS.READ_ARTICLES);
-  } catch (e) {
-    // fallback to setting empty object
-    setStorageItem(STORAGE_KEYS.READ_ARTICLES, {});
-  }
-  dispatchEventSafe("readHistoryCleared");
-  dispatchEventSafe("noctua:activity");
-}
-
 // ============ Seen Articles ============
 
-export function getSeenArticles(): ArticleStatuses {
+export function getSeenArticles(): SeenArticleStatuses {
   return getStorageItem(STORAGE_KEYS.SEEN_ARTICLES, {});
 }
 
 export function markAsSeen(articleId: string): void {
   const seen = getSeenArticles();
-  seen[articleId] = { timestamp: new Date().toISOString() };
+  seen[articleId] = true;
   setStorageItem(STORAGE_KEYS.SEEN_ARTICLES, seen);
   dispatchEventSafe("noctua:activity");
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
   interface Props {
-    onClearHistory: () => void;
+    onClearHistory: () => void | Promise<void>;
   }
 
   let { onClearHistory }: Props = $props();

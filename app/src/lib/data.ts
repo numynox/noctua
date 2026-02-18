@@ -4,6 +4,12 @@ import type { Article, Feed, Section, UserContent } from "./types";
 
 type MoveDirection = "up" | "down";
 
+export interface ReadArticleStatuses {
+  [articleId: string]: {
+    timestamp: string;
+  };
+}
+
 function toDbId(id: string): number {
   const parsed = Number(id);
   if (!Number.isInteger(parsed)) {
@@ -567,4 +573,80 @@ export async function loadUserContent(
 export function getLoginHref(baseUrl = "/") {
   const normalizedBase = baseUrl === "/" ? "" : baseUrl.replace(/\/$/, "");
   return `${normalizedBase}/login`;
+}
+
+export async function fetchReadArticlesForUser(
+  userId: string,
+  articleIds: string[],
+): Promise<ReadArticleStatuses> {
+  if (!articleIds.length) {
+    return {};
+  }
+
+  const supabase = getSupabaseClient();
+  const db = supabase as any;
+  const articleDbIds = articleIds
+    .map((id) => Number(id))
+    .filter((id) => Number.isInteger(id));
+
+  if (!articleDbIds.length) {
+    return {};
+  }
+
+  const { data, error } = await db
+    .from("article_reads")
+    .select("article_id,read_at")
+    .eq("user_id", userId)
+    .in("article_id", articleDbIds);
+
+  if (error) {
+    throw error;
+  }
+
+  const statuses: ReadArticleStatuses = {};
+  for (const row of data || []) {
+    statuses[String(row.article_id)] = {
+      timestamp: row.read_at,
+    };
+  }
+
+  return statuses;
+}
+
+export async function markArticleAsReadForUser(
+  userId: string,
+  articleId: string,
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  const db = supabase as any;
+
+  const { error } = await db.from("article_reads").upsert(
+    {
+      user_id: userId,
+      article_id: toDbId(articleId),
+      read_at: new Date().toISOString(),
+    },
+    {
+      onConflict: "user_id,article_id",
+      ignoreDuplicates: false,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function clearReadArticlesForUser(userId: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const db = supabase as any;
+
+  const { error } = await db
+    .from("article_reads")
+    .delete()
+    .eq("user_id", userId);
+
+  if (error) {
+    throw error;
+  }
 }

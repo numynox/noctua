@@ -1,13 +1,17 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { ArticleStatuses } from "../lib/storage";
+  import {
+    fetchReadArticlesForUser,
+    getSession,
+    markArticleAsReadForUser,
+    type ReadArticleStatuses,
+  } from "../lib/data";
   import {
     getFilters,
     getPreferences,
-    getReadArticles,
     getSeenArticles,
-    markAsRead,
     markAsSeen,
+    type SeenArticleStatuses,
   } from "../lib/storage";
   import type { Article } from "../lib/types";
   import ArticleCard from "./ArticleCard.svelte";
@@ -19,8 +23,14 @@
 
   let { articles, onStatsChange }: Props = $props();
 
-  let readArticles = $state<ArticleStatuses>({});
-  let seenArticles = $state<ArticleStatuses>({});
+  let persistedReadArticles = $state<ReadArticleStatuses>({});
+  let optimisticReadArticles = $state<ReadArticleStatuses>({});
+  let readArticles = $derived.by(() => ({
+    ...persistedReadArticles,
+    ...optimisticReadArticles,
+  }));
+  let seenArticles = $state<SeenArticleStatuses>({});
+  let userId = $state("");
   let searchQuery = $state("");
   let hideSeenArticles = $state(true);
   let autoMarkAsSeen = $state(true);
@@ -33,8 +43,7 @@
   // session are not immediately hidden — they will be hidden after
   // a page refresh. Live `readArticles`/`seenArticles` are still used
   // for counts and UI state.
-  let initialReadArticles = $state<ArticleStatuses>({});
-  let initialSeenArticles = $state<ArticleStatuses>({});
+  let initialSeenArticles = $state<SeenArticleStatuses>({});
 
   // Scroll handler to mark articles as seen
   let scrollHandler: (() => void) | null = null;
@@ -75,7 +84,6 @@
           bottom < 0 &&
           bottom > -0.5 * viewportH &&
           articleId &&
-          !readArticles[articleId] &&
           !seenArticles[articleId]
         ) {
           markAsSeen(articleId);
@@ -99,9 +107,7 @@
 
     // Filter by read/seen status (hide articles that were read/seen at page load)
     if (hideSeenArticles) {
-      result = result.filter(
-        (a) => !initialReadArticles[a.id] && !initialSeenArticles[a.id],
-      );
+      result = result.filter((a) => !initialSeenArticles[a.id]);
     }
 
     // Filter by search query
@@ -120,10 +126,8 @@
 
   let displayedUnreadAndUnseenCount = $derived.by(
     () =>
-      filteredArticles.filter(
-        (article) =>
-          !(article.id in readArticles) && !(article.id in seenArticles),
-      ).length,
+      filteredArticles.filter((article) => !(article.id in seenArticles))
+        .length,
   );
 
   $effect(() => {
@@ -131,12 +135,10 @@
   });
 
   onMount(() => {
-    readArticles = getReadArticles();
     seenArticles = getSeenArticles();
 
-    // Snapshot the initial read/seen state for filtering (so items
-    // marked during this session are not hidden immediately).
-    initialReadArticles = { ...readArticles };
+    // Snapshot initial seen state for filtering so items marked as seen during
+    // this session are not hidden immediately.
     initialSeenArticles = { ...seenArticles };
 
     const filters = getFilters();
@@ -145,6 +147,14 @@
     searchQuery = filters.searchQuery;
     hideSeenArticles = prefs.hideSeenArticles;
     autoMarkAsSeen = prefs.autoMarkAsSeen;
+
+    getSession()
+      .then((session) => {
+        userId = session?.user?.id || "";
+      })
+      .catch(() => {
+        userId = "";
+      });
 
     // Mark initialization complete so filteredArticles can render.
     initialized = true;
@@ -177,19 +187,15 @@
     }) as EventListener);
 
     window.addEventListener("readHistoryCleared", () => {
-      // When the read history is cleared, reload storage and update
-      // the initial snapshots so previously-hidden articles reappear.
-      readArticles = getReadArticles();
+      persistedReadArticles = {};
+      optimisticReadArticles = {};
       seenArticles = getSeenArticles();
-      initialReadArticles = { ...readArticles };
       initialSeenArticles = { ...seenArticles };
     });
 
-    // On activity (markAsRead/markAsSeen) update live maps used for
-    // counts/UI but do NOT update the initial snapshots so articles
-    // are not hidden immediately.
+    // On activity update live seen map but do NOT update the initial snapshot
+    // so articles are not hidden immediately during this session.
     window.addEventListener("noctua:activity", () => {
-      readArticles = getReadArticles();
       seenArticles = getSeenArticles();
     });
 
@@ -228,9 +234,70 @@
     };
   });
 
+  let readFetchRequest = 0;
+  $effect(() => {
+    if (!userId) {
+      persistedReadArticles = {};
+      return;
+    }
+
+    const articleIds = articles.map((article) => article.id);
+    if (!articleIds.length) {
+      persistedReadArticles = {};
+      return;
+    }
+
+    const requestId = ++readFetchRequest;
+
+    fetchReadArticlesForUser(userId, articleIds)
+      .then((statuses) => {
+        if (requestId !== readFetchRequest) {
+          return;
+        }
+
+        persistedReadArticles = statuses;
+      })
+      .catch((error) => {
+        if (requestId !== readFetchRequest) {
+          return;
+        }
+
+        console.warn("Failed to fetch read statuses", error);
+      });
+  });
+
   function handleArticleClick(articleId: string) {
-    markAsRead(articleId);
-    readArticles = getReadArticles();
+    const now = new Date().toISOString();
+    optimisticReadArticles = {
+      ...optimisticReadArticles,
+      [articleId]: { timestamp: now },
+    };
+
+    if (!seenArticles[articleId]) {
+      markAsSeen(articleId);
+      seenArticles = getSeenArticles();
+    }
+
+    if (!userId) {
+      return;
+    }
+
+    markArticleAsReadForUser(userId, articleId)
+      .then(() => {
+        persistedReadArticles = {
+          ...persistedReadArticles,
+          [articleId]: { timestamp: now },
+        };
+
+        if (optimisticReadArticles[articleId]) {
+          const next = { ...optimisticReadArticles };
+          delete next[articleId];
+          optimisticReadArticles = next;
+        }
+      })
+      .catch((error) => {
+        console.warn("Failed to sync read status", error);
+      });
   }
 </script>
 
