@@ -1,18 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import {
-    fetchHomeFeedsForUser,
     fetchSectionsForUser,
     getSession,
     onAuthStateChange,
   } from "../lib/data";
-  import {
-    getFilters,
-    getHiddenFeedsForContext,
-    setFilters,
-    toggleFeedVisibility,
-  } from "../lib/storage";
-  import type { Feed, Section } from "../lib/types";
+  import { getFilters, setFilters } from "../lib/storage";
+  import type { Section } from "../lib/types";
 
   interface Props {
     activeId?: string; // 'home' or 'settings'
@@ -29,58 +23,49 @@
   let sections = $state<Section[]>([]);
   let isLoggedIn = $state(false);
   let selectedSectionId = $state<string | null>(null);
+  let selectedFeedId = $state<string | null>(null);
   let searchQuery = $state("");
   let isMobileMenuOpen = $state(false);
-  let hiddenFeeds = $state<Set<string>>(new Set());
-  let homeFeeds = $state<Feed[]>([]);
 
-  const currentContextId = $derived.by(() => selectedSectionId || "home");
+  const currentContextId = $derived.by(() => selectedSectionId || "");
 
   const currentFeeds = $derived.by(() => {
-    if (currentContextId === "home") {
-      return homeFeeds;
-    }
-
     const section = sections.find((item) => item.id === currentContextId);
     return section ? section.feeds : [];
   });
 
-  function updateSelectedSectionFromUrl() {
-    if (typeof window === "undefined") return;
-    selectedSectionId = new URLSearchParams(window.location.search).get(
-      "section",
-    );
-  }
-
   async function refreshSidebarData() {
-    updateSelectedSectionFromUrl();
+    const params = new URLSearchParams(window.location.search);
+    const sectionFromUrl = params.get("section");
+    const feedFromUrl = params.get("feed");
 
     const session = await getSession();
     isLoggedIn = !!session?.user;
 
     if (!session?.user) {
       sections = [];
-      homeFeeds = [];
-      hiddenFeeds = getHiddenFeedsForContext(currentContextId);
+      selectedSectionId = null;
+      selectedFeedId = null;
       return;
     }
 
-    const [loadedSections, loadedHomeFeeds] = await Promise.all([
-      fetchSectionsForUser(session.user.id),
-      fetchHomeFeedsForUser(session.user.id),
-    ]);
+    const loadedSections = await fetchSectionsForUser(session.user.id);
 
     sections = loadedSections;
-    homeFeeds = loadedHomeFeeds;
+    selectedSectionId =
+      sectionFromUrl &&
+      sections.some((section) => section.id === sectionFromUrl)
+        ? sectionFromUrl
+        : sections[0]?.id || null;
 
-    const selectedExists =
-      !!selectedSectionId &&
-      sections.some((section) => section.id === selectedSectionId);
-    if (!selectedExists) {
-      selectedSectionId = null;
-    }
-
-    hiddenFeeds = getHiddenFeedsForContext(currentContextId);
+    const selectedSection = sections.find(
+      (section) => section.id === selectedSectionId,
+    );
+    selectedFeedId =
+      feedFromUrl &&
+      selectedSection?.feeds.some((feed) => feed.id === feedFromUrl)
+        ? feedFromUrl
+        : null;
   }
 
   onMount(() => {
@@ -120,14 +105,6 @@
     );
   }
 
-  function toggleFeed(feedId: string) {
-    toggleFeedVisibility(feedId, currentContextId);
-    hiddenFeeds = getHiddenFeedsForContext(currentContextId);
-    window.dispatchEvent(
-      new CustomEvent("feedsChanged", { detail: { hiddenFeeds } }),
-    );
-  }
-
   function toggleMobileMenu() {
     isMobileMenuOpen = !isMobileMenuOpen;
   }
@@ -138,6 +115,10 @@
 
   function sectionHref(sectionId: string) {
     return `${baseUrl}?section=${encodeURIComponent(sectionId)}`;
+  }
+
+  function feedHref(sectionId: string, feedId: string) {
+    return `${baseUrl}?section=${encodeURIComponent(sectionId)}&feed=${encodeURIComponent(feedId)}`;
   }
 
   function settingsHref() {
@@ -213,43 +194,6 @@
 
   <nav class="flex-1 overflow-y-auto px-4 pb-6">
     <div class="space-y-2">
-      <div class="space-y-1">
-        <a
-          href={baseUrl}
-          class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-            {activeId === 'home' && !selectedSectionId
-            ? 'bg-primary text-primary-content font-semibold shadow-md'
-            : 'hover:bg-base-300 text-base-content/80'}"
-          onclick={closeMobileMenu}
-        >
-          <span class="text-xl">🏠</span>
-          <span class="flex-1">Home</span>
-        </a>
-
-        {#if activeId === "home" && !selectedSectionId && currentFeeds.length > 0}
-          <div class="ml-4 pl-4 border-l-2 border-primary/20 space-y-1 my-2">
-            {#each currentFeeds as feed}
-              <label
-                class="flex items-center gap-3 px-3 py-1.5 rounded-lg cursor-pointer transition-colors hover:bg-base-300/50
-                {!hiddenFeeds.has(feed.id)
-                  ? 'text-base-content/80'
-                  : 'text-base-content/40'}"
-              >
-                <input
-                  type="checkbox"
-                  class="toggle toggle-xs toggle-primary"
-                  checked={!hiddenFeeds.has(feed.id)}
-                  onchange={() => toggleFeed(feed.id)}
-                />
-                <span class="text-xs truncate flex-1" title={feed.name}>
-                  {feed.name}
-                </span>
-              </label>
-            {/each}
-          </div>
-        {/if}
-      </div>
-
       {#if isLoggedIn}
         {#each sections as section}
           <div class="space-y-1">
@@ -270,22 +214,18 @@
                 class="ml-4 pl-4 border-l-2 border-primary/20 space-y-1 my-2"
               >
                 {#each currentFeeds as feed}
-                  <label
-                    class="flex items-center gap-3 px-3 py-1.5 rounded-lg cursor-pointer transition-colors hover:bg-base-300/50
-                    {!hiddenFeeds.has(feed.id)
-                      ? 'text-base-content/80'
-                      : 'text-base-content/40'}"
+                  <a
+                    href={feedHref(section.id, feed.id)}
+                    onclick={closeMobileMenu}
+                    class="flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors
+                    {selectedFeedId === feed.id
+                      ? 'bg-primary/15 text-primary font-semibold'
+                      : 'hover:bg-base-300/50 text-base-content/80'}"
                   >
-                    <input
-                      type="checkbox"
-                      class="toggle toggle-xs toggle-primary"
-                      checked={!hiddenFeeds.has(feed.id)}
-                      onchange={() => toggleFeed(feed.id)}
-                    />
                     <span class="text-xs truncate flex-1" title={feed.name}>
                       {feed.name}
                     </span>
-                  </label>
+                  </a>
                 {/each}
               </div>
             {/if}

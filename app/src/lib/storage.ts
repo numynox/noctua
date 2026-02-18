@@ -11,7 +11,6 @@ const STORAGE_KEYS = {
   THEME: "noctua_theme",
   READ_ARTICLES: "noctua_read_articles",
   SEEN_ARTICLES: "noctua_seen_articles",
-  HIDDEN_FEEDS: "noctua_hidden_feeds",
   FILTERS: "noctua_filters",
   PREFERENCES: "noctua_preferences",
 } as const;
@@ -100,6 +99,7 @@ function migrateLocalStorage(): void {
     // Remove any other old keys if they exist
     const oldKeys = [
       "noctua_hidden_sections", // This was replaced by hidden feeds logic
+      "noctua_hidden_feeds",
     ];
     oldKeys.forEach((key) => {
       localStorage.removeItem(key);
@@ -224,47 +224,6 @@ export function clearSeenHistory(): void {
   }
   dispatchEventSafe("seenHistoryCleared");
   dispatchEventSafe("noctua:activity");
-}
-
-// ============ Hidden Feeds ============
-
-export function getHiddenFeedsForContext(contextId = "home"): Set<string> {
-  const raw = getStorageItem<any>(STORAGE_KEYS.HIDDEN_FEEDS, {});
-  if (Array.isArray(raw)) {
-    // Legacy array — assume applies to all contexts
-    return new Set(raw);
-  }
-  if (raw && typeof raw === "object") {
-    const arr = raw[contextId] || [];
-    return new Set(arr);
-  }
-  return new Set();
-}
-
-export function toggleFeedVisibility(
-  feedId: string,
-  contextId = "home",
-): boolean {
-  const raw = getStorageItem<any>(STORAGE_KEYS.HIDDEN_FEEDS, {});
-
-  let data: Record<string, string[]> = {};
-  if (Array.isArray(raw)) {
-    // Migrate legacy array into home context
-    data = { home: raw };
-  } else if (raw && typeof raw === "object") {
-    data = { ...raw };
-  }
-
-  const list = new Set<string>(data[contextId] || []);
-  if (list.has(feedId)) {
-    list.delete(feedId);
-  } else {
-    list.add(feedId);
-  }
-  data[contextId] = Array.from(list);
-
-  setStorageItem(STORAGE_KEYS.HIDDEN_FEEDS, data);
-  return !list.has(feedId);
 }
 
 // ============ Preferences ============

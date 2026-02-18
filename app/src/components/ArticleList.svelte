@@ -3,27 +3,23 @@
   import type { ArticleStatuses } from "../lib/storage";
   import {
     getFilters,
-    getHiddenFeedsForContext,
     getPreferences,
     getReadArticles,
     getSeenArticles,
     markAsRead,
     markAsSeen,
   } from "../lib/storage";
-  import type { Article, Section } from "../lib/types";
+  import type { Article } from "../lib/types";
   import ArticleCard from "./ArticleCard.svelte";
 
   interface Props {
     articles: Article[];
-    sections: Section[];
-    contextId?: string;
   }
 
-  let { articles, sections, contextId = "home" }: Props = $props();
+  let { articles }: Props = $props();
 
   let readArticles = $state<ArticleStatuses>({});
   let seenArticles = $state<ArticleStatuses>({});
-  let hiddenFeeds = $state<Set<string>>(new Set());
   let searchQuery = $state("");
   let hideSeenArticles = $state(true);
   let autoMarkAsSeen = $state(true);
@@ -100,13 +96,6 @@
 
     let result = articles;
 
-    // Filter by hidden feeds (per-context). For this flat list component
-    // use the 'home' context for hidden feeds.
-    if (hiddenFeeds.size > 0) {
-      const contextHidden = getHiddenFeedsForContext(contextId);
-      result = result.filter((a) => !contextHidden.has(a.feed_id));
-    }
-
     // Filter by read/seen status (hide articles that were read/seen at page load)
     if (hideSeenArticles) {
       result = result.filter(
@@ -131,7 +120,6 @@
   onMount(() => {
     readArticles = getReadArticles();
     seenArticles = getSeenArticles();
-    hiddenFeeds = getHiddenFeedsForContext(contextId);
 
     // Snapshot the initial read/seen state for filtering (so items
     // marked during this session are not hidden immediately).
@@ -172,17 +160,6 @@
       } else if (!autoMarkAsSeen && scrollHandler) {
         window.removeEventListener("scroll", scrollHandler);
         scrollHandler = null;
-      }
-    }) as EventListener);
-
-    window.addEventListener("feedsChanged", ((e: CustomEvent) => {
-      hiddenFeeds = e.detail.hiddenFeeds;
-      // When feeds are hidden/unhidden, jump to top so the new
-      // filtered list starts at the top of the viewport.
-      try {
-        window.scrollTo(0, 0);
-      } catch (e) {
-        /* ignore */
       }
     }) as EventListener);
 

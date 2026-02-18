@@ -113,25 +113,6 @@ export async function fetchSectionsForUser(userId: string): Promise<Section[]> {
   });
 }
 
-export async function fetchHomeFeedsForUser(userId: string): Promise<Feed[]> {
-  await ensureProfile(userId);
-
-  const supabase = getSupabaseClient();
-  const { data, error } = await (supabase as any).rpc("get_user_home_feeds", {
-    p_user_id: userId,
-  });
-
-  if (error) {
-    throw error;
-  }
-
-  return ((data as any[]) || []).map((feed: any) => ({
-    id: String(feed.id),
-    name: feed.name,
-    url: feed.url,
-  }));
-}
-
 async function fetchArticlesForSections(
   sections: Section[],
   selectedSectionId?: string | null,
@@ -201,12 +182,12 @@ export async function loadUserContent(
   }
 
   const sections = await fetchSectionsForUser(session.user.id);
-  const isValidSelectedSection =
-    !!selectedSectionId &&
-    sections.some((section) => section.id === selectedSectionId);
-  const normalizedSelectedSectionId = isValidSelectedSection
-    ? selectedSectionId!
-    : null;
+  const firstSectionId = sections[0]?.id || null;
+  const normalizedSelectedSectionId =
+    selectedSectionId &&
+    sections.some((section) => section.id === selectedSectionId)
+      ? selectedSectionId
+      : firstSectionId;
   const articles = await fetchArticlesForSections(
     sections,
     normalizedSelectedSectionId,

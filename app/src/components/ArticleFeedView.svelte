@@ -12,15 +12,17 @@
   let errorMessage = $state("");
   let isLoggedIn = $state(false);
   let selectedSectionId = $state<string | null>(null);
+  let selectedFeedId = $state<string | null>(null);
   let sections = $state<Section[]>([]);
   let articles = $state<Article[]>([]);
   let loginHref = $state("/login");
+  let baseUrl = $state("/");
 
   let sectionTitle = $derived.by(() => {
-    if (!selectedSectionId) return "All Sections";
+    if (!selectedSectionId) return "No Sections";
     return (
       sections.find((section) => section.id === selectedSectionId)?.name ||
-      "Selected Section"
+      "Section"
     );
   });
 
@@ -29,22 +31,69 @@
     return new URLSearchParams(window.location.search).get("section");
   }
 
+  function getSelectedFeedFromUrl() {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("feed");
+  }
+
+  function sectionHref(sectionId: string) {
+    return `${baseUrl}?section=${encodeURIComponent(sectionId)}`;
+  }
+
   async function refreshContent() {
     loading = true;
     errorMessage = "";
 
     try {
       const selectedFromUrl = getSelectedSectionFromUrl();
+      const selectedFeedFromUrl = getSelectedFeedFromUrl();
       const content = await loadUserContent(selectedFromUrl);
 
       sections = content.sections;
-      articles = content.articles;
       selectedSectionId = content.selectedSectionId;
       isLoggedIn = content.isLoggedIn;
 
       if (!isLoggedIn) {
         window.location.replace(loginHref);
         return;
+      }
+
+      const selectedSection = sections.find(
+        (section) => section.id === selectedSectionId,
+      );
+      selectedFeedId =
+        selectedFeedFromUrl &&
+        selectedSection?.feeds.some((feed) => feed.id === selectedFeedFromUrl)
+          ? selectedFeedFromUrl
+          : null;
+
+      articles = selectedFeedId
+        ? content.articles.filter(
+            (article) => article.feed_id === selectedFeedId,
+          )
+        : content.articles;
+
+      if (sections.length > 0 && selectedSectionId) {
+        const currentUrl = new URL(window.location.href);
+        const currentParam = currentUrl.searchParams.get("section");
+        const currentFeedParam = currentUrl.searchParams.get("feed");
+
+        if (currentParam !== selectedSectionId) {
+          currentUrl.searchParams.set("section", selectedSectionId);
+        }
+
+        if (selectedFeedId) {
+          currentUrl.searchParams.set("feed", selectedFeedId);
+        } else {
+          currentUrl.searchParams.delete("feed");
+        }
+
+        const sectionChanged = currentParam !== selectedSectionId;
+        const feedChanged = (currentFeedParam || null) !== selectedFeedId;
+        if (sectionChanged || feedChanged) {
+          window.history.replaceState({}, "", currentUrl.toString());
+          window.dispatchEvent(new PopStateEvent("popstate"));
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -61,7 +110,7 @@
 
   onMount(() => {
     if (typeof document !== "undefined") {
-      const baseUrl = document.documentElement.dataset.baseUrl || "/";
+      baseUrl = document.documentElement.dataset.baseUrl || "/";
       loginHref = getLoginHref(baseUrl);
     }
 
@@ -100,13 +149,20 @@
   </div>
 {:else}
   <div class="mb-6">
-    <h1 class="text-3xl font-bold">{sectionTitle}</h1>
+    {#if selectedSectionId}
+      <a
+        href={sectionHref(selectedSectionId)}
+        class="text-3xl font-bold hover:text-primary transition-colors"
+      >
+        {sectionTitle}
+      </a>
+    {:else}
+      <h1 class="text-3xl font-bold">{sectionTitle}</h1>
+    {/if}
     <p class="text-base-content/60">
-      {selectedSectionId
-        ? "Showing the latest articles for this section."
-        : "Showing the latest articles across all your sections."}
+      Showing the latest articles for this section.
     </p>
   </div>
 
-  <ArticleList {articles} {sections} contextId={selectedSectionId || "home"} />
+  <ArticleList {articles} />
 {/if}
