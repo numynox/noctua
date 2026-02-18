@@ -13,6 +13,7 @@
   let isLoggedIn = $state(false);
   let selectedSectionId = $state<string | null>(null);
   let selectedFeedId = $state<string | null>(null);
+  let unreadAndUnseenDisplayed = $state(0);
   let sections = $state<Section[]>([]);
   let articles = $state<Article[]>([]);
   let loginHref = $state("/login");
@@ -23,6 +24,13 @@
     return (
       sections.find((section) => section.id === selectedSectionId)?.name ||
       "Section"
+    );
+  });
+
+  let sectionIcon = $derived.by(() => {
+    if (!selectedSectionId) return "🦉";
+    return (
+      sections.find((section) => section.id === selectedSectionId)?.icon || "🦉"
     );
   });
 
@@ -38,6 +46,10 @@
 
   function sectionHref(sectionId: string) {
     return `${baseUrl}?section=${encodeURIComponent(sectionId)}`;
+  }
+
+  function handleStatsChange(count: number) {
+    unreadAndUnseenDisplayed = count;
   }
 
   async function refreshContent() {
@@ -97,12 +109,12 @@
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      // If env is not configured or profile is missing, expose a concise message.
       errorMessage = message;
       isLoggedIn = false;
       sections = [];
       articles = [];
       selectedSectionId = null;
+      selectedFeedId = null;
     } finally {
       loading = false;
     }
@@ -148,21 +160,39 @@
     <span class="loading loading-spinner loading-lg"></span>
   </div>
 {:else}
-  <div class="mb-6">
-    {#if selectedSectionId}
-      <a
-        href={sectionHref(selectedSectionId)}
-        class="text-3xl font-bold hover:text-primary transition-colors"
-      >
-        {sectionTitle}
-      </a>
-    {:else}
-      <h1 class="text-3xl font-bold">{sectionTitle}</h1>
-    {/if}
-    <p class="text-base-content/60">
-      Showing the latest articles for this section.
-    </p>
+  <div
+    class="sticky top-0 z-20 mb-6 -mx-6 lg:-mx-8 px-6 lg:px-8 bg-base-100/80 backdrop-blur-md border-b border-base-300/60"
+  >
+    <div class="py-3 flex items-center justify-between gap-4">
+      {#if selectedSectionId}
+        <a
+          href={sectionHref(selectedSectionId)}
+          class="flex items-center gap-2 text-3xl font-bold hover:text-primary transition-colors"
+        >
+          <span class="text-2xl md:hidden" aria-hidden="true"
+            >{sectionIcon}</span
+          >
+          <span>{sectionTitle}</span>
+        </a>
+      {:else}
+        <h1 class="flex items-center gap-2 text-3xl font-bold">
+          <span class="text-2xl md:hidden" aria-hidden="true"
+            >{sectionIcon}</span
+          >
+          <span>{sectionTitle}</span>
+        </h1>
+      {/if}
+
+      <div class="flex items-center gap-2">
+        <span
+          class="badge badge-neutral badge-md md:badge-xl"
+          title="Unread and unseen articles"
+          aria-label="Unread and unseen articles"
+          >{unreadAndUnseenDisplayed}</span
+        >
+      </div>
+    </div>
   </div>
 
-  <ArticleList {articles} />
+  <ArticleList {articles} onStatsChange={handleStatsChange} />
 {/if}

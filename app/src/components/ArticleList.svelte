@@ -14,9 +14,10 @@
 
   interface Props {
     articles: Article[];
+    onStatsChange?: (count: number) => void;
   }
 
-  let { articles }: Props = $props();
+  let { articles, onStatsChange }: Props = $props();
 
   let readArticles = $state<ArticleStatuses>({});
   let seenArticles = $state<ArticleStatuses>({});
@@ -115,6 +116,18 @@
     }
 
     return result;
+  });
+
+  let displayedUnreadAndUnseenCount = $derived.by(
+    () =>
+      filteredArticles.filter(
+        (article) =>
+          !(article.id in readArticles) && !(article.id in seenArticles),
+      ).length,
+  );
+
+  $effect(() => {
+    onStatsChange?.(displayedUnreadAndUnseenCount);
   });
 
   onMount(() => {
@@ -216,10 +229,6 @@
 </script>
 
 <div class="space-y-4">
-  <div class="text-sm text-base-content/40 font-medium">
-    Showing {filteredArticles.length} of {articles.length} articles
-  </div>
-
   <div class="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-6">
     {#each filteredArticles as article}
       <div data-article-id={article.id}>
