@@ -17,6 +17,7 @@
     "supabase:projects:list": "npx supabase projects list",
     "supabase:link": "npx supabase link",
     "supabase:migrations:list": "npx supabase migration list",
+    "supabase:migrations:up": "npx supabase migration up",
     "supabase:db:push": "npx supabase db push",
     "supabase:db:push:dry-run": "npx supabase db push --dry-run",
     "supabase:db:pull": "npx supabase db pull",

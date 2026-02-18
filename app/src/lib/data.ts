@@ -2,6 +2,16 @@ import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { getSupabaseClient } from "./supabase";
 import type { Article, Feed, Section, UserContent } from "./types";
 
+type MoveDirection = "up" | "down";
+
+function toDbId(id: string): number {
+  const parsed = Number(id);
+  if (!Number.isInteger(parsed)) {
+    throw new Error(`Invalid id: ${id}`);
+  }
+  return parsed;
+}
+
 export async function getSession(): Promise<Session | null> {
   const supabase = getSupabaseClient();
   const {
@@ -69,14 +79,16 @@ export async function fetchSectionsForUser(userId: string): Promise<Section[]> {
   await ensureProfile(userId);
 
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase
+  const query = supabase
     .from("sections")
     .select(
       `
       id,
       title,
       icon,
+      sort_order,
       sections_feeds (
+        sort_order,
         feed_id,
         feeds (
           id,
@@ -88,7 +100,18 @@ export async function fetchSectionsForUser(userId: string): Promise<Section[]> {
     `,
     )
     .eq("user_id", userId)
-    .order("id", { ascending: true });
+    .order("sort_order", { ascending: true })
+    .order("id", { ascending: true })
+    .order("sort_order", {
+      ascending: true,
+      referencedTable: "sections_feeds",
+    })
+    .order("feed_id", {
+      ascending: true,
+      referencedTable: "sections_feeds",
+    });
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -96,21 +119,361 @@ export async function fetchSectionsForUser(userId: string): Promise<Section[]> {
 
   return (data || []).map((section: any) => {
     const feeds: Feed[] = (section.sections_feeds || [])
-      .map((joinRow: any) => joinRow.feeds)
-      .filter((feed: any) => feed && feed.enabled !== false)
-      .map((feed: any) => ({
-        id: String(feed.id),
-        name: feed.name,
-        url: feed.url,
+      .filter(
+        (joinRow: any) => joinRow?.feeds && joinRow.feeds.enabled !== false,
+      )
+      .map((joinRow: any, index: number) => ({
+        id: String(joinRow.feeds.id),
+        name: joinRow.feeds.name,
+        url: joinRow.feeds.url,
+        sort_order:
+          typeof joinRow.sort_order === "number" ? joinRow.sort_order : index,
       }));
 
     return {
       id: String(section.id),
       name: section.title,
       icon: section.icon || "🦉",
+      sort_order:
+        typeof section.sort_order === "number" ? section.sort_order : 0,
       feeds,
     };
   });
+}
+
+export async function fetchAvailableFeedsForUser(
+  userId: string,
+): Promise<Feed[]> {
+  await ensureProfile(userId);
+
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("feeds")
+    .select("id,name,url,enabled")
+    .eq("enabled", true)
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || []).map((feed: any, index: number) => ({
+    id: String(feed.id),
+    name: feed.name,
+    url: feed.url,
+    sort_order: index,
+  }));
+}
+
+export async function createSectionForUser(
+  userId: string,
+  title: string,
+  icon: string,
+): Promise<void> {
+  await ensureProfile(userId);
+
+  const supabase = getSupabaseClient();
+  const db = supabase as any;
+
+  const { data: lastSection, error: lastSectionError } = await db
+    .from("sections")
+    .select("sort_order")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (lastSectionError) {
+    throw lastSectionError;
+  }
+
+  const nextSortOrder =
+    typeof lastSection?.sort_order === "number"
+      ? lastSection.sort_order + 1
+      : 0;
+
+  const { error } = await db.from("sections").insert({
+    user_id: userId,
+    title: title.trim(),
+    icon: icon.trim() || "🦉",
+    sort_order: nextSortOrder,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function updateSectionForUser(
+  userId: string,
+  sectionId: string,
+  title: string,
+  icon: string,
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  const db = supabase as any;
+  const { error } = await db
+    .from("sections")
+    .update({
+      title: title.trim(),
+      icon: icon.trim() || "🦉",
+    })
+    .eq("id", toDbId(sectionId))
+    .eq("user_id", userId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function deleteSectionForUser(
+  userId: string,
+  sectionId: string,
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  const db = supabase as any;
+  const { error } = await db
+    .from("sections")
+    .delete()
+    .eq("id", toDbId(sectionId))
+    .eq("user_id", userId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function reorderSectionForUser(
+  userId: string,
+  sectionId: string,
+  direction: MoveDirection,
+): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  const db = supabase as any;
+  const { data, error } = await db
+    .from("sections")
+    .select("id,sort_order")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: true })
+    .order("id", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = data || [];
+  const currentIndex = rows.findIndex(
+    (row: any) => String(row.id) === sectionId,
+  );
+  if (currentIndex < 0) {
+    return false;
+  }
+
+  const offset = direction === "up" ? -1 : 1;
+  const nextIndex = currentIndex + offset;
+  if (nextIndex < 0 || nextIndex >= rows.length) {
+    return false;
+  }
+
+  const reordered = [...rows];
+  const [moved] = reordered.splice(currentIndex, 1);
+  reordered.splice(nextIndex, 0, moved);
+
+  const updates = reordered
+    .map((row: any, index: number) => ({ row, index }))
+    .filter(({ row, index }) => row.sort_order !== index)
+    .map(({ row, index }) =>
+      db
+        .from("sections")
+        .update({ sort_order: index })
+        .eq("id", row.id)
+        .eq("user_id", userId),
+    );
+
+  const results = await Promise.all(updates);
+  const failed = results.find((result) => result.error);
+  if (failed?.error) {
+    throw failed.error;
+  }
+
+  return true;
+}
+
+export async function addFeedToSectionForUser(
+  userId: string,
+  sectionId: string,
+  feedId: string,
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  const db = supabase as any;
+  const sectionDbId = toDbId(sectionId);
+  const feedDbId = toDbId(feedId);
+
+  const { data: ownedSection, error: sectionError } = await db
+    .from("sections")
+    .select("id")
+    .eq("id", sectionDbId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (sectionError) {
+    throw sectionError;
+  }
+
+  if (!ownedSection) {
+    throw new Error("Section not found.");
+  }
+
+  const { data: existing, error: existingError } = await db
+    .from("sections_feeds")
+    .select("feed_id")
+    .eq("section_id", sectionDbId)
+    .eq("feed_id", feedDbId)
+    .maybeSingle();
+
+  if (existingError) {
+    throw existingError;
+  }
+
+  if (existing) {
+    return;
+  }
+
+  const { data: lastJoin, error: lastJoinError } = await db
+    .from("sections_feeds")
+    .select("sort_order")
+    .eq("section_id", sectionDbId)
+    .order("sort_order", { ascending: false })
+    .order("feed_id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (lastJoinError) {
+    throw lastJoinError;
+  }
+
+  const nextSortOrder =
+    typeof lastJoin?.sort_order === "number" ? lastJoin.sort_order + 1 : 0;
+
+  const { error } = await db.from("sections_feeds").insert({
+    section_id: sectionDbId,
+    feed_id: feedDbId,
+    sort_order: nextSortOrder,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function removeFeedFromSectionForUser(
+  userId: string,
+  sectionId: string,
+  feedId: string,
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  const db = supabase as any;
+  const sectionDbId = toDbId(sectionId);
+  const feedDbId = toDbId(feedId);
+
+  const { data: ownedSection, error: sectionError } = await db
+    .from("sections")
+    .select("id")
+    .eq("id", sectionDbId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (sectionError) {
+    throw sectionError;
+  }
+
+  if (!ownedSection) {
+    throw new Error("Section not found.");
+  }
+
+  const { error } = await db
+    .from("sections_feeds")
+    .delete()
+    .eq("section_id", sectionDbId)
+    .eq("feed_id", feedDbId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function reorderFeedInSectionForUser(
+  userId: string,
+  sectionId: string,
+  feedId: string,
+  direction: MoveDirection,
+): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  const db = supabase as any;
+  const sectionDbId = toDbId(sectionId);
+  const feedDbId = toDbId(feedId);
+
+  const { data: ownedSection, error: sectionError } = await db
+    .from("sections")
+    .select("id")
+    .eq("id", sectionDbId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (sectionError) {
+    throw sectionError;
+  }
+
+  if (!ownedSection) {
+    throw new Error("Section not found.");
+  }
+
+  const { data, error } = await db
+    .from("sections_feeds")
+    .select("section_id,feed_id,sort_order")
+    .eq("section_id", sectionDbId)
+    .order("sort_order", { ascending: true })
+    .order("feed_id", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = data || [];
+  const currentIndex = rows.findIndex((row: any) => row.feed_id === feedDbId);
+  if (currentIndex < 0) {
+    return false;
+  }
+
+  const offset = direction === "up" ? -1 : 1;
+  const nextIndex = currentIndex + offset;
+  if (nextIndex < 0 || nextIndex >= rows.length) {
+    return false;
+  }
+
+  const reordered = [...rows];
+  const [moved] = reordered.splice(currentIndex, 1);
+  reordered.splice(nextIndex, 0, moved);
+
+  const updates = reordered
+    .map((row: any, index: number) => ({ row, index }))
+    .filter(({ row, index }) => row.sort_order !== index)
+    .map(({ row, index }) =>
+      db
+        .from("sections_feeds")
+        .update({ sort_order: index })
+        .eq("section_id", sectionDbId)
+        .eq("feed_id", row.feed_id),
+    );
+
+  const results = await Promise.all(updates);
+  const failed = results.find((result) => result.error);
+  if (failed?.error) {
+    throw failed.error;
+  }
+
+  return true;
 }
 
 async function fetchArticlesForSections(

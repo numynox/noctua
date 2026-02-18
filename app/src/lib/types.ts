@@ -16,12 +16,14 @@ export interface Feed {
   id: string;
   name: string;
   url: string;
+  sort_order: number;
 }
 
 export interface Section {
   id: string;
   name: string;
   icon: string;
+  sort_order: number;
   feeds: Feed[];
 }
 
