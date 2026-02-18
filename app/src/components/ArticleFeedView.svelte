@@ -18,6 +18,7 @@
   let articles = $state<Article[]>([]);
   let loginHref = $state("/login");
   let baseUrl = $state("/");
+  let siteTitle = $state("Noctua");
 
   let sectionTitle = $derived.by(() => {
     if (!selectedSectionId) return "No Sections";
@@ -32,6 +33,20 @@
     return (
       sections.find((section) => section.id === selectedSectionId)?.icon || "🦉"
     );
+  });
+
+  let selectedFeedTitle = $derived.by(() => {
+    if (!selectedSectionId || !selectedFeedId) return null;
+
+    const section = sections.find((item) => item.id === selectedSectionId);
+    return (
+      section?.feeds.find((feed) => feed.id === selectedFeedId)?.name || null
+    );
+  });
+
+  let visibleTitle = $derived.by(() => {
+    if (selectedFeedTitle) return selectedFeedTitle;
+    return sectionTitle;
   });
 
   function getSelectedSectionFromUrl() {
@@ -50,6 +65,19 @@
 
   function handleStatsChange(count: number) {
     unreadAndUnseenDisplayed = count;
+  }
+
+  function updateDocumentTitle() {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    if (selectedSectionId) {
+      document.title = `${visibleTitle} | ${siteTitle}`;
+      return;
+    }
+
+    document.title = siteTitle;
   }
 
   async function refreshContent() {
@@ -123,6 +151,7 @@
   onMount(() => {
     if (typeof document !== "undefined") {
       baseUrl = document.documentElement.dataset.baseUrl || "/";
+      siteTitle = document.documentElement.dataset.siteTitle || "Noctua";
       loginHref = getLoginHref(baseUrl);
     }
 
@@ -144,6 +173,12 @@
       data.subscription.unsubscribe();
       window.removeEventListener("popstate", handlePopState);
     };
+  });
+
+  $effect(() => {
+    if (!loading && !errorMessage && isLoggedIn) {
+      updateDocumentTitle();
+    }
   });
 </script>
 
@@ -172,14 +207,14 @@
           <span class="text-2xl md:hidden" aria-hidden="true"
             >{sectionIcon}</span
           >
-          <span>{sectionTitle}</span>
+          <span>{visibleTitle}</span>
         </a>
       {:else}
         <h1 class="flex items-center gap-2 text-3xl font-bold">
           <span class="text-2xl md:hidden" aria-hidden="true"
             >{sectionIcon}</span
           >
-          <span>{sectionTitle}</span>
+          <span>{visibleTitle}</span>
         </h1>
       {/if}
 
