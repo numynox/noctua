@@ -132,7 +132,7 @@ export async function fetchHomeFeedsForUser(userId: string): Promise<Feed[]> {
   }));
 }
 
-export async function fetchArticlesForSections(
+async function fetchArticlesForSections(
   sections: Section[],
   selectedSectionId?: string | null,
   limit = 300,

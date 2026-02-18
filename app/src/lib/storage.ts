@@ -139,6 +139,16 @@ function setStorageItem<T>(key: string, value: T): void {
   }
 }
 
+function dispatchEventSafe(eventName: string): void {
+  if (!isBrowser()) return;
+
+  try {
+    window.dispatchEvent(new CustomEvent(eventName));
+  } catch {
+    // ignore
+  }
+}
+
 // ============ Theme ============
 
 export function getTheme(): string {
@@ -150,7 +160,7 @@ export function setTheme(theme: string): void {
   applyTheme(theme);
 }
 
-export function applyTheme(theme: string): void {
+function applyTheme(theme: string): void {
   if (!isBrowser()) return;
 
   const html = document.documentElement;
@@ -177,31 +187,7 @@ export function markAsRead(articleId: string): void {
   const read = getReadArticles();
   read[articleId] = { timestamp: new Date().toISOString() };
   setStorageItem(STORAGE_KEYS.READ_ARTICLES, read);
-  // Notify any listeners (e.g., auto-refresh timer) that the user performed
-  // activity related to reading an article so timers can be reset.
-  try {
-    if (isBrowser()) {
-      window.dispatchEvent(new CustomEvent("noctua:activity"));
-    }
-  } catch (e) {
-    // ignore
-  }
-}
-
-export function markAsUnread(articleId: string): void {
-  const read = getReadArticles();
-  delete read[articleId];
-  setStorageItem(STORAGE_KEYS.READ_ARTICLES, read);
-}
-
-export function isArticleRead(articleId: string): boolean {
-  const read = getReadArticles();
-  return articleId in read;
-}
-
-export function getArticleReadTimestamp(articleId: string): string | null {
-  const read = getReadArticles();
-  return read[articleId]?.timestamp || null;
+  dispatchEventSafe("noctua:activity");
 }
 
 export function clearReadHistory(): void {
@@ -212,14 +198,8 @@ export function clearReadHistory(): void {
     // fallback to setting empty object
     setStorageItem(STORAGE_KEYS.READ_ARTICLES, {});
   }
-  try {
-    if (isBrowser()) {
-      window.dispatchEvent(new CustomEvent("readHistoryCleared"));
-      window.dispatchEvent(new CustomEvent("noctua:activity"));
-    }
-  } catch (e) {
-    // ignore
-  }
+  dispatchEventSafe("readHistoryCleared");
+  dispatchEventSafe("noctua:activity");
 }
 
 // ============ Seen Articles ============
@@ -232,24 +212,7 @@ export function markAsSeen(articleId: string): void {
   const seen = getSeenArticles();
   seen[articleId] = { timestamp: new Date().toISOString() };
   setStorageItem(STORAGE_KEYS.SEEN_ARTICLES, seen);
-  // Also notify activity listeners when an article is marked as seen.
-  try {
-    if (isBrowser()) {
-      window.dispatchEvent(new CustomEvent("noctua:activity"));
-    }
-  } catch (e) {
-    // ignore
-  }
-}
-
-export function isArticleSeen(articleId: string): boolean {
-  const seen = getSeenArticles();
-  return articleId in seen;
-}
-
-export function getArticleSeenTimestamp(articleId: string): string | null {
-  const seen = getSeenArticles();
-  return seen[articleId]?.timestamp || null;
+  dispatchEventSafe("noctua:activity");
 }
 
 export function clearSeenHistory(): void {
@@ -259,33 +222,11 @@ export function clearSeenHistory(): void {
   } catch (e) {
     setStorageItem(STORAGE_KEYS.SEEN_ARTICLES, {});
   }
-  try {
-    if (isBrowser()) {
-      window.dispatchEvent(new CustomEvent("seenHistoryCleared"));
-      window.dispatchEvent(new CustomEvent("noctua:activity"));
-    }
-  } catch (e) {
-    // ignore
-  }
+  dispatchEventSafe("seenHistoryCleared");
+  dispatchEventSafe("noctua:activity");
 }
 
 // ============ Hidden Feeds ============
-
-export function getHiddenFeeds(): Set<string> {
-  // Deprecated: previous format was an array of feed ids. New format is
-  // an object mapping contextId -> string[] (e.g. { home: [...], tech: [...] }).
-  const raw = getStorageItem<any>(STORAGE_KEYS.HIDDEN_FEEDS, {});
-  if (Array.isArray(raw)) {
-    // Legacy array — treat as global/home hidden list for backward compat.
-    return new Set(raw);
-  }
-  // If it's an object, return the 'home' context by default (global view)
-  if (raw && typeof raw === "object") {
-    const arr = raw["home"] || [];
-    return new Set(arr);
-  }
-  return new Set();
-}
 
 export function getHiddenFeedsForContext(contextId = "home"): Set<string> {
   const raw = getStorageItem<any>(STORAGE_KEYS.HIDDEN_FEEDS, {});
@@ -326,10 +267,6 @@ export function toggleFeedVisibility(
   return !list.has(feedId);
 }
 
-export function isFeedHidden(feedId: string, contextId = "home"): boolean {
-  return getHiddenFeedsForContext(contextId).has(feedId);
-}
-
 // ============ Preferences ============
 
 export function getPreferences(): UserPreferences {
@@ -350,8 +287,4 @@ export function getFilters(): FilterSettings {
 export function setFilters(filters: Partial<FilterSettings>): void {
   const current = getFilters();
   setStorageItem(STORAGE_KEYS.FILTERS, { ...current, ...filters });
-}
-
-export function resetFilters(): void {
-  setStorageItem(STORAGE_KEYS.FILTERS, DEFAULT_FILTERS);
 }
