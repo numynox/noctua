@@ -2,17 +2,26 @@
   import { onMount } from "svelte";
   import { getSession, signInWithPassword } from "../lib/data";
 
+  interface Props {
+    siteTitle?: string;
+    baseUrl?: string;
+  }
+
+  let { siteTitle = "Noctua", baseUrl = "/" }: Props = $props();
+  const normalizedBaseUrl = baseUrl === "/" ? "" : baseUrl.replace(/\/$/, "");
+  const logoSrc = `${normalizedBaseUrl}/noctua.png`;
+
   let email = $state("");
   let password = $state("");
   let isBusy = $state(false);
   let authError = $state("");
 
-  let homeHref = $state("/");
+  let homeHref = $state(baseUrl);
 
   onMount(async () => {
     if (typeof document !== "undefined") {
-      const baseUrl = document.documentElement.dataset.baseUrl || "/";
-      homeHref = baseUrl;
+      const rootBaseUrl = document.documentElement.dataset.baseUrl || "/";
+      homeHref = baseUrl || rootBaseUrl;
     }
 
     try {
@@ -50,12 +59,16 @@
 <div class="min-h-screen flex items-center justify-center p-6 bg-base-100">
   <div class="w-full max-w-md card bg-base-200 shadow-sm">
     <div class="card-body p-6 lg:p-8">
-      <h1 class="text-2xl font-bold mb-2">Sign in</h1>
-      <p class="text-sm text-base-content/70 mb-4">
-        Use your Supabase account to continue.
-      </p>
+      <div class="flex flex-col items-center text-center mb-4">
+        <img
+          src={logoSrc}
+          alt={`${siteTitle} Logo`}
+          class="w-14 h-14 object-contain mb-3"
+        />
+        <h1 class="text-2xl font-bold mb-1">Sign in to {siteTitle}</h1>
+      </div>
 
-      <form class="space-y-4" onsubmit={handleLogin}>
+      <form class="flex flex-col gap-2" onsubmit={handleLogin}>
         <label class="form-control w-full">
           <span class="label-text">Email</span>
           <input
@@ -84,7 +97,11 @@
           </div>
         {/if}
 
-        <button class="btn btn-primary w-full" type="submit" disabled={isBusy}>
+        <button
+          class="btn btn-primary w-full mt-4"
+          type="submit"
+          disabled={isBusy}
+        >
           {isBusy ? "Signing in..." : "Sign in"}
         </button>
       </form>

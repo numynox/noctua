@@ -16,8 +16,46 @@ const siteTitle = getWebsiteTitle();
     <meta name="generator" content={Astro.generator} />
 
     <title>Login | {siteTitle}</title>
+
+    <link rel="icon" type="image/x-icon" href={baseUrl + "/favicon.ico"} />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href={baseUrl + "/favicon-32x32.png"}
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href={baseUrl + "/favicon-16x16.png"}
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href={baseUrl + "/apple-touch-icon.png"}
+    />
+    <link rel="manifest" href={baseUrl + "/manifest.webmanifest"} />
+
+    <script is:inline>
+      (function () {
+        const theme = localStorage.getItem("noctua_theme");
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+
+        let actualTheme = "dark";
+        if (theme && theme !== '"auto"') {
+          actualTheme = JSON.parse(theme);
+        } else if (!prefersDark) {
+          actualTheme = "light";
+        }
+
+        document.documentElement.setAttribute("data-theme", actualTheme);
+      })();
+    </script>
   </head>
   <body class="bg-base-100 text-base-content overflow-x-hidden">
-    <LoginPanel client:load />
+    <LoginPanel siteTitle={siteTitle} baseUrl={baseUrl} client:load />
   </body>
 </html>
