@@ -3,13 +3,13 @@ INSERT INTO "public"."feeds" ("id", "created_at", "name", "url", "enabled", "fil
 INSERT INTO public.profiles (id, full_name, email, created_at)
 VALUES ('00000000-0000-0000-0000-000000000001', 'Example User', 'user@example.com', now());
 
-INSERT INTO public.sections (id, created_at, title, icon, user_id)
-VALUES (1, now(), 'News', '🗞️', '00000000-0000-0000-0000-000000000001'),
-	(2, now(), 'Tech', '💻', '00000000-0000-0000-0000-000000000001');
+INSERT INTO public.sections (id, created_at, title, icon, user_id, sort_order)
+VALUES (1, now(), 'News', '🗞️', '00000000-0000-0000-0000-000000000001', 0),
+	(2, now(), 'Tech', '💻', '00000000-0000-0000-0000-000000000001', 1);
 
-INSERT INTO public.sections_feeds (section_id, feed_id, created_at)
-VALUES (1, 1, now()),
-	(1, 3, now()),
-    (2, 1, now()),
-    (2, 2, now()),
-    (2, 4, now());
+INSERT INTO public.sections_feeds (section_id, feed_id, created_at, sort_order)
+VALUES (1, 1, now(), 0),
+	(1, 3, now(), 1),
+    (2, 1, now(), 0),
+    (2, 2, now(), 1),
+    (2, 4, now(), 2);
