@@ -10,6 +10,18 @@ export interface ReadArticleStatuses {
   };
 }
 
+export interface ReadStatisticsRecord {
+  articleId: string;
+  readAt: string;
+  feedId: string | null;
+  feedName: string;
+}
+
+export interface FeedArticleTotalRecord {
+  feedName: string;
+  count: number;
+}
+
 function toDbId(id: string): number {
   const parsed = Number(id);
   if (!Number.isInteger(parsed)) {
@@ -651,4 +663,106 @@ export async function clearReadArticlesForUser(userId: string): Promise<void> {
   if (error) {
     throw error;
   }
+}
+
+export async function fetchReadStatisticsForUser(
+  userId: string,
+): Promise<ReadStatisticsRecord[]> {
+  await ensureProfile(userId);
+
+  const supabase = getSupabaseClient();
+  const db = supabase as any;
+
+  const { data, error } = await db
+    .from("article_reads")
+    .select(
+      `
+      article_id,
+      read_at,
+      articles (
+        feed_id,
+        feeds (
+          name
+        )
+      )
+    `,
+    )
+    .eq("user_id", userId)
+    .order("read_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || []).map((row: any) => ({
+    articleId: String(row.article_id),
+    readAt: row.read_at,
+    feedId:
+      row.articles && row.articles.feed_id !== null
+        ? String(row.articles.feed_id)
+        : null,
+    feedName: row.articles?.feeds?.name || "Unknown feed",
+  }));
+}
+
+export async function fetchArticleCountForUser(
+  userId: string,
+  publishedSinceIso?: string,
+): Promise<number> {
+  await ensureProfile(userId);
+
+  const supabase = getSupabaseClient();
+
+  let query = supabase
+    .from("articles")
+    .select("id", { count: "exact", head: true });
+
+  if (publishedSinceIso) {
+    query = query.gte("published_at", publishedSinceIso);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return count || 0;
+}
+
+export async function fetchArticleTotalsByFeedForUser(
+  userId: string,
+  publishedSinceIso: string,
+): Promise<FeedArticleTotalRecord[]> {
+  await ensureProfile(userId);
+
+  const supabase = getSupabaseClient();
+  const db = supabase as any;
+
+  const { data, error } = await db
+    .from("articles")
+    .select(
+      `
+      feed_id,
+      feeds (
+        name
+      )
+    `,
+    )
+    .gte("published_at", publishedSinceIso);
+
+  if (error) {
+    throw error;
+  }
+
+  const counts = new Map<string, number>();
+  for (const row of data || []) {
+    const feedName = row.feeds?.name || "Unknown feed";
+    counts.set(feedName, (counts.get(feedName) || 0) + 1);
+  }
+
+  return Array.from(counts.entries()).map(([feedName, count]) => ({
+    feedName,
+    count,
+  }));
 }

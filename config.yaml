@@ -6,3 +6,5 @@ settings:
     description: "An RSS feed reader."
     base_url: "/noctua"
     article_fetch_limit: 300 # Applies per section
+    statistics_weeks: 8 # Window for weekly average cards/charts
+    statistics_heatmap_weeks: 52 # Window for commit-style read heatmap

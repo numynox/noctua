@@ -39,3 +39,27 @@ export function getArticleFetchLimit(): number {
 
   return 300;
 }
+
+export function getStatisticsWeeks(): number {
+  const config = loadConfig();
+  const value = config.settings?.website?.statistics_weeks;
+  const parsed = Number(value);
+
+  if (Number.isInteger(parsed) && parsed > 0) {
+    return parsed;
+  }
+
+  return 8;
+}
+
+export function getStatisticsHeatmapWeeks(): number {
+  const config = loadConfig();
+  const value = config.settings?.website?.statistics_heatmap_weeks;
+  const parsed = Number(value);
+
+  if (Number.isInteger(parsed) && parsed > 0) {
+    return parsed;
+  }
+
+  return 52;
+}

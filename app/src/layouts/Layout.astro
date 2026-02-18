@@ -3,6 +3,8 @@ import Sidebar from "../components/Sidebar.svelte";
 import {
   getArticleFetchLimit,
   getBaseUrl,
+  getStatisticsHeatmapWeeks,
+  getStatisticsWeeks,
   getWebsiteDescription,
   getWebsiteTitle,
 } from "../lib/config";
@@ -18,6 +20,8 @@ const baseUrl = getBaseUrl();
 const siteTitle = getWebsiteTitle();
 const siteDescription = getWebsiteDescription();
 const articleFetchLimit = getArticleFetchLimit();
+const statisticsWeeks = getStatisticsWeeks();
+const statisticsHeatmapWeeks = getStatisticsHeatmapWeeks();
 const { title = "", description = siteDescription, activeId } = Astro.props;
 const themeColor = "#242933";
 ---
@@ -29,6 +33,8 @@ const themeColor = "#242933";
   data-base-url={baseUrl}
   data-site-title={siteTitle}
   data-article-fetch-limit={String(articleFetchLimit)}
+  data-statistics-weeks={String(statisticsWeeks)}
+  data-statistics-heatmap-weeks={String(statisticsHeatmapWeeks)}
 >
   <head>
     <meta charset="UTF-8" />

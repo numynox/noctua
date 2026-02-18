@@ -9,7 +9,7 @@
   import type { Section } from "../lib/types";
 
   interface Props {
-    activeId?: string; // 'home' or 'settings'
+    activeId?: string; // 'home', 'statistics', or 'settings'
     baseUrl?: string;
     siteTitle?: string;
   }
@@ -125,6 +125,11 @@
     const normalizedBase = baseUrl === "/" ? "" : baseUrl.replace(/\/$/, "");
     return `${normalizedBase}/settings`;
   }
+
+  function statisticsHref() {
+    const normalizedBase = baseUrl === "/" ? "" : baseUrl.replace(/\/$/, "");
+    return `${normalizedBase}/statistics`;
+  }
 </script>
 
 <div class="lg:hidden fixed bottom-6 right-6 z-50">
@@ -236,6 +241,18 @@
   </nav>
 
   <div class="p-4 border-t border-base-300">
+    <a
+      href={statisticsHref()}
+      class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+        {activeId === 'statistics'
+        ? 'bg-primary text-primary-content font-semibold shadow-md'
+        : 'hover:bg-base-300 text-base-content/80'}"
+      onclick={closeMobileMenu}
+    >
+      <span class="text-xl">📊</span>
+      <span>Statistics</span>
+    </a>
+
     <a
       href={settingsHref()}
       class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all

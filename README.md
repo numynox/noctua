@@ -144,6 +144,8 @@ Filtering can be defined globally, per section, or per feed.
 settings:
   website:
     article_fetch_limit: 300 # Max articles fetched per section in app UI
+    statistics_weeks: 8 # Window for weekly average cards/charts
+    statistics_heatmap_weeks: 52 # Window for commit-style heatmap
   filter:
     max_age_hours: 72 # Exclude old articles
     exclude_keywords: # Block these terms
