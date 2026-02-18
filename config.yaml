@@ -1,14 +1,7 @@
 # Noctua RSS Feed Configuration
-# This file is used by all steps in the pipeline
-
-# Global settings
 settings:
-  # Output directory base path (relative to project root)
   output_base: "output"
-
-  # Website generation settings
   website:
     title: "Noctua"
     description: "An RSS feed reader."
-    base_url: "/noctua"  # Change for GitHub Pages deployment
-    reset_time_minutes: 15  # If returning to the site after this time, refresh content
+    base_url: "/noctua"

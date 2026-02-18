@@ -1,14 +1,16 @@
 ---
-import Layout from "../layouts/Layout.astro";
 import SettingsPanel from "../components/SettingsPanel.svelte";
+import Layout from "../layouts/Layout.astro";
+import { getWebsiteDescription, getWebsiteTitle } from "../lib/config";
+
+const siteTitle = getWebsiteTitle();
+const siteDescription = getWebsiteDescription();
 ---
 
 <Layout title="Settings" activeId="settings">
   <div class="mb-10 text-center max-w-2xl mx-auto">
-    <h1 class="text-4xl font-bold mb-4">Settings</h1>
-    <p class="text-base-content/60">
-      Customize your reading experience and manage your data.
-    </p>
+    <h1 class="text-4xl font-bold mb-2">{siteTitle}</h1>
+    <p class="text-base-content/70 mb-4">{siteDescription}</p>
   </div>
 
   <SettingsPanel client:load />

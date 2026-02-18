@@ -1,17 +1,8 @@
-import { existsSync, readFileSync } from "fs";
-import { load } from "js-yaml";
-import { join } from "path";
-
-const PROJECT_ROOT = join(import.meta.dirname, "..", "..", "..");
-
-function loadConfig() {
-  const configPath = join(PROJECT_ROOT, "config.yaml");
-  if (existsSync(configPath)) {
-    const raw = readFileSync(configPath, "utf-8");
-    return load(raw) as any;
-  }
-  return {};
-}
+import {
+  getWebsiteDescription,
+  getWebsiteTitle,
+  loadConfig,
+} from "../lib/config";
 
 export async function GET() {
   const config = loadConfig();
@@ -21,8 +12,8 @@ export async function GET() {
   const rawBase = website?.base_url || "/";
   const base = rawBase === "/" ? "" : rawBase.replace(/\/$/, "");
 
-  const name = website?.title || "Noctua";
-  const description = website?.description || "An RSS feed reader.";
+  const name = getWebsiteTitle();
+  const description = getWebsiteDescription();
   const themeColor = "#242933";
 
   const manifest = {

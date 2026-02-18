@@ -17,3 +17,13 @@ export function getBaseUrl(): string {
   const config = loadConfig();
   return config.settings?.website?.base_url || "/";
 }
+
+export function getWebsiteTitle(): string {
+  const config = loadConfig();
+  return config.settings?.website?.title || "Noctua";
+}
+
+export function getWebsiteDescription(): string {
+  const config = loadConfig();
+  return config.settings?.website?.description || "An RSS feed reader.";
+}

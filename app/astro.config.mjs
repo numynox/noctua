@@ -15,7 +15,7 @@ export default defineConfig({
   output: "static",
 
   // Build output directory
-  outDir: "../output/app",
+  outDir: `../${config.settings?.output_base || "output"}/app`,
 
   // Base path - adjust for GitHub Pages
   base: config.settings?.website?.base_url || "/",

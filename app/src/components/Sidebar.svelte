@@ -17,9 +17,14 @@
   interface Props {
     activeId?: string; // 'home' or 'settings'
     baseUrl?: string;
+    siteTitle?: string;
   }
 
-  let { activeId = "home", baseUrl = "/" }: Props = $props();
+  let {
+    activeId = "home",
+    baseUrl = "/",
+    siteTitle = "Noctua",
+  }: Props = $props();
 
   let sections = $state<Section[]>([]);
   let isLoggedIn = $state(false);
@@ -182,11 +187,11 @@
         ></div>
         <img
           src="{baseUrl}/noctua.png"
-          alt="Noctua Logo"
+          alt={`${siteTitle} Logo`}
           class="relative w-full h-full object-contain"
         />
       </div>
-      <span>Noctua</span>
+      <span>{siteTitle}</span>
     </a>
   </div>
 
