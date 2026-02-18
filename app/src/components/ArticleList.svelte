@@ -200,25 +200,31 @@
       }, 1000); // 1 second delay
     }
 
-    // If the page initially has no filtered articles, scroll to the bottom
-    // so the always-present 'You're all caught up' area is visible.
-    if (filteredArticles.length === 0) {
-      setTimeout(() => {
-        try {
-          window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: "smooth",
-          });
-        } catch (e) {
-          window.scrollTo(0, document.body.scrollHeight);
-        }
-      }, 150);
-    }
-
     return () => {
       if (scrollHandler) {
         window.removeEventListener("scroll", scrollHandler);
       }
+    };
+  });
+
+  $effect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const shouldLockScroll = initialized && filteredArticles.length === 0;
+
+    if (shouldLockScroll) {
+      document.documentElement.style.overflowY = "hidden";
+      document.body.style.overflowY = "hidden";
+    } else {
+      document.documentElement.style.overflowY = "";
+      document.body.style.overflowY = "";
+    }
+
+    return () => {
+      document.documentElement.style.overflowY = "";
+      document.body.style.overflowY = "";
     };
   });
 
@@ -228,23 +234,8 @@
   }
 </script>
 
-<div class="space-y-4">
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-6">
-    {#each filteredArticles as article}
-      <div data-article-id={article.id}>
-        <ArticleCard
-          {article}
-          isRead={article.id in readArticles}
-          isSeen={article.id in seenArticles}
-          readTimestamp={readArticles[article.id]?.timestamp || null}
-          onArticleClick={() => handleArticleClick(article.id)}
-        />
-      </div>
-    {/each}
-  </div>
-
-  <!-- Large 'All Caught Up' area always present after the list so users can scroll to it -->
-  <div class="min-h-screen mt-8 flex items-center justify-center">
+{#if filteredArticles.length === 0}
+  <div class="h-[calc(100svh-12rem)] flex items-center justify-center">
     <div
       class="text-center py-8 md:py-20 bg-base-200/50 rounded-3xl border border-dashed border-base-300 w-full max-w-3xl"
     >
@@ -272,4 +263,49 @@
       </div>
     </div>
   </div>
-</div>
+{:else}
+  <div class="space-y-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-6">
+      {#each filteredArticles as article}
+        <div data-article-id={article.id}>
+          <ArticleCard
+            {article}
+            isRead={article.id in readArticles}
+            isSeen={article.id in seenArticles}
+            readTimestamp={readArticles[article.id]?.timestamp || null}
+            onArticleClick={() => handleArticleClick(article.id)}
+          />
+        </div>
+      {/each}
+    </div>
+
+    <div class="h-[100svh] bg-base-100 flex items-center justify-center">
+      <div
+        class="text-center py-8 md:py-20 bg-base-200/50 rounded-3xl border border-dashed border-base-300 w-full max-w-3xl"
+      >
+        <div class="text-6xl mb-4">✅</div>
+        <h3 class="text-2xl font-bold mb-2">You're all caught up</h3>
+        <p class="text-base-content/60 mb-6 px-6 md:px-16">
+          There are no articles to show right now — either you've already viewed
+          them, or your current filters hide some items.
+        </p>
+        <div class="flex items-center justify-center gap-3">
+          <button
+            class="btn btn-primary"
+            onclick={() => {
+              try {
+                const url = new URL(window.location.href);
+                url.searchParams.set("_noctua_reload", String(Date.now()));
+                window.location.replace(url.toString());
+              } catch (e) {
+                window.location.reload();
+              }
+            }}
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
