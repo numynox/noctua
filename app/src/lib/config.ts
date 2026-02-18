@@ -27,3 +27,15 @@ export function getWebsiteDescription(): string {
   const config = loadConfig();
   return config.settings?.website?.description || "An RSS feed reader.";
 }
+
+export function getArticleFetchLimit(): number {
+  const config = loadConfig();
+  const value = config.settings?.website?.article_fetch_limit;
+  const parsed = Number(value);
+
+  if (Number.isInteger(parsed) && parsed > 0) {
+    return parsed;
+  }
+
+  return 300;
+}

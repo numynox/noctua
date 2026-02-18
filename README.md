@@ -142,6 +142,8 @@ Filtering can be defined globally, per section, or per feed.
 
 ```yaml
 settings:
+  website:
+    article_fetch_limit: 300 # Max articles fetched per section in app UI
   filter:
     max_age_hours: 72 # Exclude old articles
     exclude_keywords: # Block these terms

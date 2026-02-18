@@ -5,3 +5,4 @@ settings:
     title: "Noctua"
     description: "An RSS feed reader."
     base_url: "/noctua"
+    article_fetch_limit: 300 # Applies per section

@@ -19,6 +19,7 @@
   let loginHref = $state("/login");
   let baseUrl = $state("/");
   let siteTitle = $state("Noctua");
+  let articleFetchLimit = $state(300);
 
   let sectionTitle = $derived.by(() => {
     if (!selectedSectionId) return "No Sections";
@@ -87,7 +88,7 @@
     try {
       const selectedFromUrl = getSelectedSectionFromUrl();
       const selectedFeedFromUrl = getSelectedFeedFromUrl();
-      const content = await loadUserContent(selectedFromUrl);
+      const content = await loadUserContent(selectedFromUrl, articleFetchLimit);
 
       sections = content.sections;
       selectedSectionId = content.selectedSectionId;
@@ -152,6 +153,11 @@
     if (typeof document !== "undefined") {
       baseUrl = document.documentElement.dataset.baseUrl || "/";
       siteTitle = document.documentElement.dataset.siteTitle || "Noctua";
+      const parsedLimit = Number(
+        document.documentElement.dataset.articleFetchLimit,
+      );
+      articleFetchLimit =
+        Number.isInteger(parsedLimit) && parsedLimit > 0 ? parsedLimit : 300;
       loginHref = getLoginHref(baseUrl);
     }
 

@@ -539,6 +539,7 @@ async function fetchArticlesForSections(
 
 export async function loadUserContent(
   selectedSectionId?: string | null,
+  articleLimitPerSection = 300,
 ): Promise<UserContent> {
   const session = await getSession();
   if (!session?.user) {
@@ -560,6 +561,7 @@ export async function loadUserContent(
   const articles = await fetchArticlesForSections(
     sections,
     normalizedSelectedSectionId,
+    articleLimitPerSection,
   );
 
   return {
