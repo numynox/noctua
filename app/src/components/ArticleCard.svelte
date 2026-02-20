@@ -67,69 +67,59 @@
   }
 </script>
 
-<article
-  class="card bg-base-100 md:bg-base-200 cursor-pointer transition-all md:rounded-lg md:hover:outline md:hover:outline-2 md:hover:outline-primary"
+<div
+  class="card card-side bg-base-200 cursor-pointer transition-all rounded-lg hover:outline hover:outline-2 hover:outline-primary h-64"
   class:opacity-60={isRead || isSeen}
   class:grayscale-25={isRead || isSeen}
   onclick={handleCardClick}
 >
-  <div class="card-body p-0 md:p-4">
-    <!-- Header -->
-    <div class="flex items-start gap-2">
-      <div class="flex-1">
-        <h3 class="text-lg font-bold">
-          {article.title}
-        </h3>
+  {#if article.image_url}
+    <figure class="w-32 md:w-42 h-full">
+      <img
+        src={article.image_url}
+        alt=""
+        class="w-full h-full object-cover rounded-l-md bg-base-300"
+        loading="lazy"
+        onerror={handleImageError}
+      />
+    </figure>
+  {/if}
+  <div class="card-body flex-1 p-4">
+    <h3 class="card-title text-lg font-bold">
+      {article.title}
+    </h3>
 
-        <div class="text-xs text-base-content/60 mt-1 flex flex-wrap gap-2">
-          <span>{article.feed_name}</span>
-          {#if article.published}
-            <span>•</span>
-            <time datetime={article.published}>
-              {formatDate(article.published)}
-            </time>
-          {/if}
-          {#if article.author}
-            <span>•</span>
-            <span>{article.author}</span>
-          {/if}
-        </div>
-
-        <div class="flex items-center gap-2 text-xs text-base-content/60 mt-2">
-          {#if readTimestamp}
-            <span class="badge badge-primary badge-xs"
-              >{formatReadTimestamp(readTimestamp)}</span
-            >
-          {/if}
-        </div>
-      </div>
-
-      <!-- Image Preview -->
-      {#if article.image_url}
-        <div class="flex-none ml-2">
-          <img
-            src={article.image_url}
-            alt=""
-            class="w-20 h-20 md:w-24 md:h-24 object-cover rounded-md bg-base-300"
-            loading="lazy"
-            onerror={handleImageError}
-          />
-        </div>
+    <div class="text-xs text-base-content/60 flex flex-wrap gap-2">
+      <span>{article.feed_name}</span>
+      {#if article.published}
+        <span>•</span>
+        <time datetime={article.published}>
+          {formatDate(article.published)}
+        </time>
+      {/if}
+      {#if article.author}
+        <span>•</span>
+        <span>{article.author}</span>
       {/if}
     </div>
 
-    <!-- Summary -->
-    <p class="text-sm text-base-content/80 line-clamp-3">
-      {article.summary || ""}
-    </p>
+    <div class="overflow-hidden flex-1">
+      <p class="text-sm text-base-content/80 line-clamp-3">
+        {article.summary || ""}
+      </p>
+    </div>
 
-    <!-- Tags -->
-    {#if article.tags && article.tags.length > 0}
-      <div class="flex flex-wrap gap-1 md:gap-1 mt-2">
+    <div class="flex flex-wrap gap-1 mt-2 min-h-5">
+      {#if readTimestamp}
+        <span class="badge badge-primary badge-xs"
+          >{formatReadTimestamp(readTimestamp)}</span
+        >
+      {/if}
+      {#if article.tags && article.tags.length > 0}
         {#each article.tags.slice(0, 3) as tag}
           <span class="badge badge-outline badge-xs">{tag}</span>
         {/each}
-      </div>
-    {/if}
+      {/if}
+    </div>
   </div>
-</article>
+</div>
