@@ -86,8 +86,17 @@
         class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-base-300 to-transparent"
       ></div>
     </figure>
+  {:else}
+    <figure class="relative">
+      <div
+        class="h-30 md:h-40 lg:h-50 w-full bg-radial-[at_50%_-50%] from-secondary to-base-300"
+      ></div>
+      <div
+        class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-base-300 to-transparent"
+      ></div>
+    </figure>
   {/if}
-  <div class="card-body p-4 relative z-10" class:-mt-18={article.image_url}>
+  <div class="card-body p-4 relative z-10 -mt-18">
     <div class="text-xs text-base-content/60 flex flex-wrap gap-2">
       <span class="badge badge-neutral badge-xs">{article.feed_name}</span>
       {#if article.published}
