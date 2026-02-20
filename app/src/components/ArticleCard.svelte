@@ -68,27 +68,23 @@
 </script>
 
 <div
-  class="card card-side bg-base-200 cursor-pointer transition-all rounded-lg hover:outline hover:outline-2 hover:outline-primary h-64"
+  class="card bg-base-200 cursor-pointer transition-all rounded-lg hover:outline hover:outline-2 hover:outline-primary"
   class:opacity-60={isRead || isSeen}
   class:grayscale-25={isRead || isSeen}
   onclick={handleCardClick}
 >
   {#if article.image_url}
-    <figure class="w-32 md:w-42 h-full">
+    <figure>
       <img
         src={article.image_url}
         alt=""
-        class="w-full h-full object-cover rounded-l-md bg-base-300"
+        class="h-30 md:h-40 lg:h-50 w-full object-cover bg-base-300"
         loading="lazy"
         onerror={handleImageError}
       />
     </figure>
   {/if}
-  <div class="card-body flex-1 p-4">
-    <h3 class="card-title text-lg font-bold">
-      {article.title}
-    </h3>
-
+  <div class="card-body p-4">
     <div class="text-xs text-base-content/60 flex flex-wrap gap-2">
       <span>{article.feed_name}</span>
       {#if article.published}
@@ -103,23 +99,27 @@
       {/if}
     </div>
 
-    <div class="overflow-hidden flex-1">
-      <p class="text-sm text-base-content/80 line-clamp-3">
-        {article.summary || ""}
-      </p>
-    </div>
+    <h3 class="card-title text-lg font-bold">
+      {article.title}
+    </h3>
 
-    <div class="flex flex-wrap gap-1 mt-2 min-h-5">
-      {#if readTimestamp}
-        <span class="badge badge-primary badge-xs"
-          >{formatReadTimestamp(readTimestamp)}</span
-        >
-      {/if}
-      {#if article.tags && article.tags.length > 0}
-        {#each article.tags.slice(0, 3) as tag}
-          <span class="badge badge-outline badge-xs">{tag}</span>
-        {/each}
-      {/if}
-    </div>
+    <p class="text-sm text-base-content/80 line-clamp-3">
+      {article.summary || ""}
+    </p>
+
+    {#if readTimestamp || (article.tags && article.tags.length > 0)}
+      <div class="flex flex-wrap gap-1">
+        {#if readTimestamp}
+          <span class="badge badge-primary badge-xs"
+            >{formatReadTimestamp(readTimestamp)}</span
+          >
+        {/if}
+        {#if article.tags && article.tags.length > 0}
+          {#each article.tags.slice(0, 3) as tag}
+            <span class="badge badge-outline badge-xs">{tag}</span>
+          {/each}
+        {/if}
+      </div>
+    {/if}
   </div>
 </div>

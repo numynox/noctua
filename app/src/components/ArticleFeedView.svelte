@@ -202,7 +202,7 @@
   </div>
 {:else}
   <div
-    class="sticky top-0 z-20 mb-6 -mx-6 lg:-mx-8 px-6 lg:px-8 bg-base-100/80 backdrop-blur-md border-b border-base-300/60"
+    class="sticky top-0 z-20 mb-6 -mx-4 lg:-mx-8 px-6 lg:px-8 bg-base-100/80 backdrop-blur-sm border-b border-base-300/60"
   >
     <div class="py-3 flex items-center justify-between gap-4">
       {#if selectedSectionId}
@@ -226,7 +226,7 @@
 
       <div class="flex items-center gap-2">
         <span
-          class="badge badge-neutral badge-md md:badge-xl"
+          class="badge badge-primary badge-md md:badge-xl"
           title="Unread and unseen articles"
           aria-label="Unread and unseen articles"
           >{unreadAndUnseenDisplayed}</span

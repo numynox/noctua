@@ -332,7 +332,7 @@
   </div>
 {:else}
   <div class="space-y-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
       {#each filteredArticles as article}
         <div data-article-id={article.id}>
           <ArticleCard
