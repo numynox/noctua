@@ -68,34 +68,37 @@
 </script>
 
 <div
-  class="card bg-base-200 cursor-pointer transition-all rounded-lg hover:outline hover:outline-2 hover:outline-primary"
+  class="card bg-base-300 cursor-pointer transition-all rounded-lg hover:outline hover:outline-2 hover:outline-primary"
   class:opacity-60={isRead || isSeen}
   class:grayscale-25={isRead || isSeen}
   onclick={handleCardClick}
 >
   {#if article.image_url}
-    <figure>
+    <figure class="relative">
       <img
         src={article.image_url}
         alt=""
-        class="h-30 md:h-40 lg:h-50 w-full object-cover bg-base-300"
+        class="h-40 lg:h-50 w-full object-cover bg-base-300"
         loading="lazy"
         onerror={handleImageError}
       />
+      <div
+        class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-base-300 to-transparent"
+      ></div>
     </figure>
   {/if}
-  <div class="card-body p-4">
+  <div class="card-body p-4 relative z-10" class:-mt-18={article.image_url}>
     <div class="text-xs text-base-content/60 flex flex-wrap gap-2">
-      <span>{article.feed_name}</span>
+      <span class="badge badge-neutral badge-xs">{article.feed_name}</span>
       {#if article.published}
-        <span>•</span>
-        <time datetime={article.published}>
-          {formatDate(article.published)}
-        </time>
+        <span class="badge badge-neutral badge-xs">
+          <time datetime={article.published}>
+            {formatDate(article.published)}
+          </time>
+        </span>
       {/if}
       {#if article.author}
-        <span>•</span>
-        <span>{article.author}</span>
+        <span class="badge badge-neutral badge-xs">{article.author}</span>
       {/if}
     </div>
 
@@ -110,13 +113,13 @@
     {#if readTimestamp || (article.tags && article.tags.length > 0)}
       <div class="flex flex-wrap gap-1">
         {#if readTimestamp}
-          <span class="badge badge-primary badge-xs"
+          <span class="badge badge-success badge-xs"
             >{formatReadTimestamp(readTimestamp)}</span
           >
         {/if}
         {#if article.tags && article.tags.length > 0}
           {#each article.tags.slice(0, 3) as tag}
-            <span class="badge badge-outline badge-xs">{tag}</span>
+            <span class="badge badge-neutral badge-xs">{tag}</span>
           {/each}
         {/if}
       </div>
