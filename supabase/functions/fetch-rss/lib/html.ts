@@ -21,6 +21,28 @@ export function stripHtml(html: string | null | undefined): string | null {
   );
 }
 
+export function decodeHtmlEntities(text: string | null): string | null {
+  if (!text) return null;
+  try {
+    const doc = new DOMParser().parseFromString(
+      `<div>${text}</div>`,
+      "text/html",
+    );
+    return doc.body.textContent || text;
+  } catch {
+    return text;
+  }
+}
+
+export function decodeNumericEntities(text: string | null): string | null {
+  if (!text) return null;
+  return text.replace(/&#(x?[0-9a-f]+);/gi, (match, code) => {
+    const base = code.startsWith("x") ? 16 : 10;
+    const num = parseInt(code.replace(/^x/, ""), base);
+    return String.fromCharCode(num);
+  });
+}
+
 export function extractFirstImageFromHtml(
   html: string | null | undefined,
   base?: string,
