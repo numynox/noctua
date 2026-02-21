@@ -20,7 +20,7 @@
   }: Props = $props();
 </script>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
   <div class="card bg-base-200 shadow-sm">
     <div class="card-body p-5">
       <p class="text-sm text-base-content/70">Total read</p>

@@ -705,6 +705,30 @@ export async function fetchReadStatisticsForUser(
   }));
 }
 
+export async function fetchOldestReadAtForUser(
+  userId: string,
+): Promise<string | null> {
+  await ensureProfile(userId);
+
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from("article_reads")
+    .select("read_at")
+    .eq("user_id", userId)
+    .order("read_at", { ascending: true })
+    .limit(1);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as { read_at: string }[] | null) &&
+    (data as { read_at: string }[]).length > 0
+    ? (data as { read_at: string }[])[0].read_at
+    : null;
+}
+
 export async function fetchArticleCountForUser(
   userId: string,
   publishedSinceIso?: string,

@@ -1,57 +1,24 @@
 <script lang="ts">
   export interface HeatmapCell {
-    dateKey: string;
+    hour: number;
     count: number;
-    isFuture: boolean;
   }
 
-  export interface HeatmapWeek {
-    weekLabel: string;
+  export interface HeatmapDay {
+    dayLabel: string;
     cells: HeatmapCell[];
   }
 
   interface Props {
-    weeks: HeatmapWeek[];
+    days: HeatmapDay[];
     maxCount: number;
   }
 
-  let { weeks, maxCount }: Props = $props();
+  let { days, maxCount }: Props = $props();
 
-  const weekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-  interface MonthSegment {
-    label: string;
-    span: number;
-  }
-
-  let monthSegments = $derived.by(() => {
-    const segments: MonthSegment[] = [];
-
-    for (const week of weeks) {
-      const mondayKey = week.cells[0]?.dateKey;
-      if (!mondayKey) continue;
-
-      const mondayDate = new Date(`${mondayKey}T00:00:00`);
-      const monthLabel = mondayDate.toLocaleDateString("en-US", {
-        month: "long",
-      });
-
-      const previous = segments[segments.length - 1];
-      if (previous && previous.label === monthLabel) {
-        previous.span += 1;
-      } else {
-        segments.push({
-          label: monthLabel,
-          span: 1,
-        });
-      }
-    }
-
-    return segments;
-  });
+  const hourLabels = Array.from({ length: 24 }, (_, i) => i.toString());
 
   function cellClass(cell: HeatmapCell): string {
-    if (cell.isFuture) return "bg-base-300/40";
     if (cell.count === 0) return "bg-base-300";
 
     const ratio = maxCount > 0 ? cell.count / maxCount : 0;
@@ -64,35 +31,32 @@
 
 <section class="card bg-base-200 shadow-sm">
   <div class="card-body p-6">
-    {#if weeks.length === 0}
+    {#if days.length === 0}
       <p class="text-sm text-base-content/70">No read activity yet.</p>
     {:else}
       <div class="overflow-x-auto">
         <div
           class="inline-grid gap-1"
-          style={`grid-template-columns: auto repeat(${weeks.length}, minmax(0, 1fr));`}
+          style={`grid-template-columns: auto repeat(7, minmax(0, 1fr));`}
         >
           <div></div>
-          {#each monthSegments as segment}
-            <div
-              class="text-xs text-left text-base-content/70 truncate"
-              style={`grid-column: span ${segment.span};`}
-            >
-              {segment.label}
+          {#each days as day}
+            <div class="text-xs text-center text-base-content/70">
+              {day.dayLabel}
             </div>
           {/each}
 
-          {#each weekdayLabels as label, dayIndex}
+          {#each hourLabels as label, hourIndex}
             <div class="contents">
               <div class="text-xs pr-2 text-base-content/70 self-center">
                 {label}
               </div>
-              {#each weeks as week}
-                {@const cell = week.cells[dayIndex]}
+              {#each days as day}
+                {@const cell = day.cells[hourIndex]}
                 <div
-                  class={`w-3.5 h-3.5 rounded-sm border border-base-100 ${cellClass(cell)}`}
-                  title={`${cell.dateKey}: ${cell.count} read`}
-                  aria-label={`${cell.dateKey}: ${cell.count} read`}
+                  class={`w-5 h-5 rounded-sm border border-base-100 ${cellClass(cell)}`}
+                  title={`${day.dayLabel} ${cell.hour}:00: ${cell.count} reads`}
+                  aria-label={`${day.dayLabel} ${cell.hour}:00: ${cell.count} reads`}
                 ></div>
               {/each}
             </div>

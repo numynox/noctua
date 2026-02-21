@@ -3,6 +3,7 @@
   import {
     fetchArticleCountForUser,
     fetchArticleTotalsByFeedForUser,
+    fetchOldestReadAtForUser,
     fetchReadStatisticsForUser,
     getLoginHref,
     getSession,
@@ -12,7 +13,7 @@
   } from "../lib/data";
   import FeedReadsBarChart from "./statistics/FeedReadsBarChart.svelte";
   import ReadHeatmap, {
-    type HeatmapWeek,
+    type HeatmapDay,
   } from "./statistics/ReadHeatmap.svelte";
   import SummaryCards from "./statistics/SummaryCards.svelte";
   import WeekdayAverageBarChart from "./statistics/WeekdayAverageBarChart.svelte";
@@ -24,7 +25,7 @@
   let userId = $state("");
 
   let statisticsWeeks = $state(8);
-  let heatmapWeeks = $state(52);
+  let effectiveWeeks = $state(8);
 
   let records = $state<ReadStatisticsRecord[]>([]);
   let totalArticleCount = $state(0);
@@ -47,13 +48,6 @@
     return date;
   }
 
-  function toDateKey(input: Date): string {
-    const year = input.getFullYear();
-    const month = String(input.getMonth() + 1).padStart(2, "0");
-    const day = String(input.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
-
   function weekdayIndexMonday(input: Date): number {
     return (input.getDay() + 6) % 7;
   }
@@ -73,8 +67,19 @@
       userId = session.user.id;
       isLoggedIn = true;
 
+      const oldestReadAt = await fetchOldestReadAtForUser(userId);
+      let availableWeeks = statisticsWeeks;
+      if (oldestReadAt) {
+        const oldestDate = new Date(oldestReadAt);
+        const now = new Date();
+        const diffMs = now.getTime() - oldestDate.getTime();
+        const diffWeeks = Math.ceil(diffMs / (7 * 24 * 60 * 60 * 1000));
+        availableWeeks = Math.min(diffWeeks, statisticsWeeks);
+      }
+      effectiveWeeks = Math.max(availableWeeks, 1); // at least 1 week
+
       const currentWeekStart = startOfWeekMonday(new Date());
-      const windowStart = addDays(currentWeekStart, -(statisticsWeeks - 1) * 7);
+      const windowStart = addDays(currentWeekStart, -(effectiveWeeks - 1) * 7);
       const currentWeekStartIso = currentWeekStart.toISOString();
       const windowStartIso = windowStart.toISOString();
 
@@ -122,14 +127,6 @@
         Number.isInteger(parsedStatisticsWeeks) && parsedStatisticsWeeks > 0
           ? parsedStatisticsWeeks
           : 8;
-
-      const parsedHeatmapWeeks = Number(
-        document.documentElement.dataset.statisticsHeatmapWeeks,
-      );
-      heatmapWeeks =
-        Number.isInteger(parsedHeatmapWeeks) && parsedHeatmapWeeks > 0
-          ? parsedHeatmapWeeks
-          : 52;
     }
 
     refreshStatistics();
@@ -157,20 +154,20 @@
 
   let averagePerWeek = $derived.by(() => {
     const currentWeekStart = startOfWeekMonday(new Date());
-    const windowStart = addDays(currentWeekStart, -(statisticsWeeks - 1) * 7);
+    const windowStart = addDays(currentWeekStart, -(effectiveWeeks - 1) * 7);
     const count = records.filter(
       (record) => new Date(record.readAt) >= windowStart,
     ).length;
-    return count / statisticsWeeks;
+    return count / effectiveWeeks;
   });
 
   let averageArticlesPerWeek = $derived.by(
-    () => windowArticleCount / statisticsWeeks,
+    () => windowArticleCount / effectiveWeeks,
   );
 
   let feedReadEntries = $derived.by(() => {
     const currentWeekStart = startOfWeekMonday(new Date());
-    const windowStart = addDays(currentWeekStart, -(statisticsWeeks - 1) * 7);
+    const windowStart = addDays(currentWeekStart, -(effectiveWeeks - 1) * 7);
 
     const counts = new Map<string, number>();
 
@@ -205,7 +202,7 @@
   let weekdayAverages = $derived.by(() => {
     const counts = Array.from({ length: 7 }, () => 0);
     const currentWeekStart = startOfWeekMonday(new Date());
-    const windowStart = addDays(currentWeekStart, -(statisticsWeeks - 1) * 7);
+    const windowStart = addDays(currentWeekStart, -(effectiveWeeks - 1) * 7);
 
     for (const record of records) {
       const date = new Date(record.readAt);
@@ -213,52 +210,46 @@
       counts[weekdayIndexMonday(date)] += 1;
     }
 
-    return counts.map((count) => count / statisticsWeeks);
+    return counts.map((count) => count / effectiveWeeks);
   });
 
   let heatmapData = $derived.by(() => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     const currentWeekStart = startOfWeekMonday(today);
-    const firstWeekStart = addDays(currentWeekStart, -(heatmapWeeks - 1) * 7);
+    const windowStart = addDays(currentWeekStart, -(effectiveWeeks - 1) * 7);
 
-    const dayCounts = new Map<string, number>();
+    const hourDayCounts = new Map<string, number>();
     for (const record of records) {
       const date = new Date(record.readAt);
-      date.setHours(0, 0, 0, 0);
+      if (date < windowStart) continue;
 
-      if (date < firstWeekStart || date > today) continue;
-      const key = toDateKey(date);
-      dayCounts.set(key, (dayCounts.get(key) || 0) + 1);
+      const dayOfWeek = weekdayIndexMonday(date);
+      const hour = date.getHours();
+      const key = `${dayOfWeek}-${hour}`;
+      hourDayCounts.set(key, (hourDayCounts.get(key) || 0) + 1);
     }
 
-    const weeks: HeatmapWeek[] = [];
+    const days: HeatmapDay[] = [];
     let maxCount = 0;
 
-    for (let weekIndex = 0; weekIndex < heatmapWeeks; weekIndex += 1) {
-      const weekStart = addDays(firstWeekStart, weekIndex * 7);
+    const dayLabels = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+    for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
       const cells = [];
 
-      for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
-        const date = addDays(weekStart, dayIndex);
-        const dateKey = toDateKey(date);
-        const isFuture = date > today;
-        const count = isFuture ? 0 : dayCounts.get(dateKey) || 0;
+      for (let hour = 0; hour < 24; hour += 1) {
+        const key = `${dayIndex}-${hour}`;
+        const count = hourDayCounts.get(key) || 0;
         maxCount = Math.max(maxCount, count);
 
-        cells.push({ dateKey, count, isFuture });
+        cells.push({ hour, count });
       }
 
-      const weekLabel = weekStart.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-      weeks.push({ weekLabel, cells });
+      days.push({ dayLabel: dayLabels[dayIndex], cells });
     }
 
     return {
-      weeks,
+      days,
       maxCount,
     };
   });
@@ -285,14 +276,16 @@
       thisWeekTotalCount={thisWeekArticleCount}
       {averagePerWeek}
       averageTotalPerWeek={averageArticlesPerWeek}
-      {statisticsWeeks}
+      {effectiveWeeks}
     />
 
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-      <FeedReadsBarChart entries={feedReadEntries} />
-      <WeekdayAverageBarChart {weekdayAverages} />
-    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="md:col-span-2 space-y-6">
+        <FeedReadsBarChart entries={feedReadEntries} />
+        <WeekdayAverageBarChart {weekdayAverages} />
+      </div>
 
-    <ReadHeatmap weeks={heatmapData.weeks} maxCount={heatmapData.maxCount} />
+      <ReadHeatmap days={heatmapData.days} maxCount={heatmapData.maxCount} />
+    </div>
   </div>
 {/if}

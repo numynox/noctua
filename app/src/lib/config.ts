@@ -51,15 +51,3 @@ export function getStatisticsWeeks(): number {
 
   return 8;
 }
-
-export function getStatisticsHeatmapWeeks(): number {
-  const config = loadConfig();
-  const value = config.settings?.website?.statistics_heatmap_weeks;
-  const parsed = Number(value);
-
-  if (Number.isInteger(parsed) && parsed > 0) {
-    return parsed;
-  }
-
-  return 52;
-}
