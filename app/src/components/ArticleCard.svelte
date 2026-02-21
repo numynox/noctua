@@ -89,7 +89,7 @@
   {:else}
     <figure class="relative">
       <div
-        class="h-30 md:h-40 lg:h-50 w-full bg-radial-[at_50%_-50%] from-secondary to-base-300"
+        class="h-40 lg:h-50 w-full bg-radial-[at_50%_-50%] from-secondary to-base-300"
       ></div>
       <div
         class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-base-300 to-transparent"
@@ -98,16 +98,39 @@
   {/if}
   <div class="card-body p-4 relative z-10 -mt-18">
     <div class="text-xs text-base-content/60 flex flex-wrap gap-2">
-      <span class="badge badge-neutral badge-xs">{article.feed_name}</span>
+      <span class="badge badge-neutral badge-sm flex items-center gap-1">
+        {#if article.feed_icon}
+          <img
+            src={article.feed_icon}
+            alt=""
+            class="w-4 h-4 flex-shrink-0"
+            onerror={(e) => {
+              (e.target as HTMLElement).style.display = "none";
+            }}
+          />
+        {:else}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="currentColor"
+            class="w-4 h-4 flex-shrink-0bi bi-rss-fill"
+            viewBox="0 0 16 16"
+          >
+            <path
+              d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm1.5 2.5c5.523 0 10 4.477 10 10a1 1 0 1 1-2 0 8 8 0 0 0-8-8 1 1 0 0 1 0-2m0 4a6 6 0 0 1 6 6 1 1 0 1 1-2 0 4 4 0 0 0-4-4 1 1 0 0 1 0-2m.5 7a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3"
+            />
+          </svg>
+        {/if}
+        {article.feed_name}
+      </span>
       {#if article.published}
-        <span class="badge badge-neutral badge-xs">
+        <span class="badge badge-neutral badge-sm">
           <time datetime={article.published}>
             {formatDate(article.published)}
           </time>
         </span>
       {/if}
       {#if article.author}
-        <span class="badge badge-neutral badge-xs">{article.author}</span>
+        <span class="badge badge-neutral badge-sm">{article.author}</span>
       {/if}
     </div>
 

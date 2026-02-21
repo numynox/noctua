@@ -112,6 +112,7 @@ export async function fetchSectionsForUser(userId: string): Promise<Section[]> {
           id,
           name,
           url,
+          icon,
           enabled
         )
       )
@@ -144,6 +145,7 @@ export async function fetchSectionsForUser(userId: string): Promise<Section[]> {
         id: String(joinRow.feeds.id),
         name: joinRow.feeds.name,
         url: joinRow.feeds.url,
+        icon: joinRow.feeds.icon || null,
         sort_order:
           typeof joinRow.sort_order === "number" ? joinRow.sort_order : index,
       }));
@@ -167,7 +169,7 @@ export async function fetchAvailableFeedsForUser(
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("feeds")
-    .select("id,name,url,enabled")
+    .select("id,name,url,icon,enabled")
     .eq("enabled", true)
     .order("name", { ascending: true });
 
@@ -179,6 +181,7 @@ export async function fetchAvailableFeedsForUser(
     id: String(feed.id),
     name: feed.name,
     url: feed.url,
+    icon: feed.icon || null,
     sort_order: index,
   }));
 }
@@ -537,6 +540,7 @@ async function fetchArticlesForSections(
       id: String(article.id),
       feed_id: feedId,
       feed_name: feed?.name || "Unknown feed",
+      feed_icon: feed?.icon || null,
       title: article.title || "Untitled",
       url: article.url,
       published: article.published_at,

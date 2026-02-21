@@ -2,6 +2,7 @@ export interface Article {
   id: string;
   feed_id: string;
   feed_name: string;
+  feed_icon: string | null;
   title: string;
   url: string;
   published: string | null;
@@ -16,6 +17,7 @@ export interface Feed {
   id: string;
   name: string;
   url: string;
+  icon: string | null;
   sort_order: number;
 }
 
