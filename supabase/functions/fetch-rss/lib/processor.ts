@@ -1,9 +1,4 @@
-import {
-  decodeHtmlEntities,
-  decodeNumericEntities,
-  extractFirstImageFromHtml,
-  stripHtml,
-} from "./html.ts";
+import { decodeText, extractFirstImageFromHtml, stripHtml } from "./html.ts";
 import { ArticleInsert, FeedRecord } from "./types.ts";
 
 // Map feed parser entries into ArticleInsert records
@@ -34,7 +29,7 @@ export function mapFeedEntriesToArticles(
     )
       extractedImage = feedEntry["media:thumbnail"].url;
 
-    const htmlContent = decodeNumericEntities(
+    const htmlContent = decodeText(
       feedEntry.content?.value ||
         feedEntry.description?.value ||
         feedEntry.summary?.value ||
@@ -44,36 +39,31 @@ export function mapFeedEntriesToArticles(
     if (!extractedImage && htmlContent)
       extractedImage = extractFirstImageFromHtml(htmlContent, entryUrl);
 
-    const author = decodeNumericEntities(
-      decodeHtmlEntities(
-        feedEntry.author
-          ? typeof feedEntry.author === "string"
-            ? feedEntry.author
-            : feedEntry.author.name || null
-          : null,
-      ),
+    const author = decodeText(
+      feedEntry.author
+        ? typeof feedEntry.author === "string"
+          ? feedEntry.author
+          : feedEntry.author.name || null
+        : null,
     );
     const tags = feedEntry.categories
       ? feedEntry.categories
           .map((c: any) => c.term || c.label || c)
-          .map((tag: string) => decodeNumericEntities(decodeHtmlEntities(tag)))
+          .map((tag: string) => decodeText(tag))
       : [];
 
-    const rawSummary = decodeNumericEntities(
+    const rawSummary =
       feedEntry.summary?.value ||
-        feedEntry.description?.value ||
-        feedEntry.content?.value ||
-        feedEntry.summary ||
-        null,
-    );
-    const cleanedSummary = decodeHtmlEntities(stripHtml(rawSummary));
+      feedEntry.description?.value ||
+      feedEntry.content?.value ||
+      feedEntry.summary ||
+      null;
+    const cleanedSummary = decodeText(stripHtml(rawSummary));
 
     const article: ArticleInsert = {
       feed_id: feed.id,
-      title: decodeNumericEntities(
-        decodeHtmlEntities(
-          feedEntry.title?.value || feedEntry.title || "Untitled",
-        ),
+      title: decodeText(
+        feedEntry.title?.value || feedEntry.title || "Untitled",
       ),
       url: entryUrl,
       published_at: feedEntry.published

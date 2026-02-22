@@ -21,7 +21,9 @@ export function stripHtml(html: string | null | undefined): string | null {
   );
 }
 
-export function decodeHtmlEntities(text: string | null): string | null {
+export function decodeHtmlEntities(
+  text: string | null | undefined,
+): string | null {
   if (!text) return null;
   try {
     const doc = new DOMParser().parseFromString(
@@ -30,17 +32,36 @@ export function decodeHtmlEntities(text: string | null): string | null {
     );
     return doc.body.textContent || text;
   } catch {
-    return text;
+    // Fallback for environments without DOMParser (e.g. Deno Deploy)
+    const entities: Record<string, string> = {
+      "&amp;": "&",
+      "&lt;": "<",
+      "&gt;": ">",
+      "&quot;": '"',
+      "&apos;": "'",
+      "&nbsp;": " ",
+    };
+    return text.replace(
+      /&[a-z]+;/gi,
+      (match) => entities[match.toLowerCase()] || match,
+    );
   }
 }
 
-export function decodeNumericEntities(text: string | null): string | null {
+export function decodeNumericEntities(
+  text: string | null | undefined,
+): string | null {
   if (!text || typeof text !== "string") return null;
   return text.replace(/&#(x?[0-9a-f]+);/gi, (match, code) => {
     const base = code.startsWith("x") ? 16 : 10;
     const num = parseInt(code.replace(/^x/, ""), base);
     return String.fromCharCode(num);
   });
+}
+
+export function decodeText(text: string | null | undefined): string | null {
+  if (!text) return null;
+  return decodeHtmlEntities(decodeNumericEntities(text));
 }
 
 export function extractFirstImageFromHtml(
