@@ -6,7 +6,6 @@
     thisWeekTotalCount: number;
     averagePerWeek: number;
     averageTotalPerWeek: number;
-    statisticsWeeks: number;
   }
 
   let {
@@ -16,7 +15,6 @@
     thisWeekTotalCount,
     averagePerWeek,
     averageTotalPerWeek,
-    statisticsWeeks,
   }: Props = $props();
 </script>
 

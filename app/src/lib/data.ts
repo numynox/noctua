@@ -794,3 +794,30 @@ export async function fetchArticleTotalsByFeedForUser(
     count,
   }));
 }
+
+export interface PublishedArticleStatisticsRecord {
+  publishedAt: string;
+}
+
+export async function fetchPublishedArticleStatisticsForUser(
+  userId: string,
+  publishedSinceIso: string,
+): Promise<PublishedArticleStatisticsRecord[]> {
+  await ensureProfile(userId);
+
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from("articles")
+    .select("published_at")
+    .gte("published_at", publishedSinceIso)
+    .order("published_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || []).map((row: any) => ({
+    publishedAt: row.published_at,
+  }));
+}

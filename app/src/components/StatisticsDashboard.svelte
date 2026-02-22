@@ -4,17 +4,19 @@
     fetchArticleCountForUser,
     fetchArticleTotalsByFeedForUser,
     fetchOldestReadAtForUser,
+    fetchPublishedArticleStatisticsForUser,
     fetchReadStatisticsForUser,
     getLoginHref,
     getSession,
     onAuthStateChange,
     type FeedArticleTotalRecord,
+    type PublishedArticleStatisticsRecord,
     type ReadStatisticsRecord,
   } from "../lib/data";
-  import FeedReadsBarChart from "./statistics/FeedReadsBarChart.svelte";
-  import ReadHeatmap, {
+  import ArticleHeatmap, {
     type HeatmapDay,
-  } from "./statistics/ReadHeatmap.svelte";
+  } from "./statistics/ArticleHeatmap.svelte";
+  import FeedReadsBarChart from "./statistics/FeedReadsBarChart.svelte";
   import SummaryCards from "./statistics/SummaryCards.svelte";
   import WeekdayAverageBarChart from "./statistics/WeekdayAverageBarChart.svelte";
 
@@ -28,6 +30,7 @@
   let effectiveWeeks = $state(8);
 
   let records = $state<ReadStatisticsRecord[]>([]);
+  let publishedArticleRecords = $state<PublishedArticleStatisticsRecord[]>([]);
   let totalArticleCount = $state(0);
   let thisWeekArticleCount = $state(0);
   let windowArticleCount = $state(0);
@@ -85,12 +88,14 @@
 
       const [
         readRecords,
+        publishedRecords,
         totalArticles,
         thisWeekArticles,
         windowArticles,
         perFeedTotals,
       ] = await Promise.all([
         fetchReadStatisticsForUser(userId),
+        fetchPublishedArticleStatisticsForUser(userId, windowStartIso),
         fetchArticleCountForUser(userId),
         fetchArticleCountForUser(userId, currentWeekStartIso),
         fetchArticleCountForUser(userId, windowStartIso),
@@ -98,14 +103,27 @@
       ]);
 
       records = readRecords;
+      publishedArticleRecords = publishedRecords;
       totalArticleCount = totalArticles;
       thisWeekArticleCount = thisWeekArticles;
       windowArticleCount = windowArticles;
       feedArticleTotals = perFeedTotals;
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      let message = "An error occurred";
+      if (error instanceof Error) {
+        message = error.message;
+      } else if (
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error
+      ) {
+        message = String((error as any).message);
+      } else if (typeof error === "string") {
+        message = error;
+      }
       errorMessage = message;
       records = [];
+      publishedArticleRecords = [];
       totalArticleCount = 0;
       thisWeekArticleCount = 0;
       windowArticleCount = 0;
@@ -213,7 +231,7 @@
     return counts.map((count) => count / effectiveWeeks);
   });
 
-  let heatmapData = $derived.by(() => {
+  let readHeatmapData = $derived.by(() => {
     const today = new Date();
     const currentWeekStart = startOfWeekMonday(today);
     const windowStart = addDays(currentWeekStart, -(effectiveWeeks - 1) * 7);
@@ -221,6 +239,47 @@
     const hourDayCounts = new Map<string, number>();
     for (const record of records) {
       const date = new Date(record.readAt);
+      if (date < windowStart) continue;
+
+      const dayOfWeek = weekdayIndexMonday(date);
+      const hour = date.getHours();
+      const key = `${dayOfWeek}-${hour}`;
+      hourDayCounts.set(key, (hourDayCounts.get(key) || 0) + 1);
+    }
+
+    const days: HeatmapDay[] = [];
+    let maxCount = 0;
+
+    const dayLabels = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+    for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
+      const cells = [];
+
+      for (let hour = 0; hour < 24; hour += 1) {
+        const key = `${dayIndex}-${hour}`;
+        const count = hourDayCounts.get(key) || 0;
+        maxCount = Math.max(maxCount, count);
+
+        cells.push({ hour, count });
+      }
+
+      days.push({ dayLabel: dayLabels[dayIndex], cells });
+    }
+
+    return {
+      days,
+      maxCount,
+    };
+  });
+
+  let publishedArticleHeatmapData = $derived.by(() => {
+    const today = new Date();
+    const currentWeekStart = startOfWeekMonday(today);
+    const windowStart = addDays(currentWeekStart, -(effectiveWeeks - 1) * 7);
+
+    const hourDayCounts = new Map<string, number>();
+    for (const record of publishedArticleRecords) {
+      const date = new Date(record.publishedAt);
       if (date < windowStart) continue;
 
       const dayOfWeek = weekdayIndexMonday(date);
@@ -276,16 +335,31 @@
       thisWeekTotalCount={thisWeekArticleCount}
       {averagePerWeek}
       averageTotalPerWeek={averageArticlesPerWeek}
-      {effectiveWeeks}
     />
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
       <div class="md:col-span-2 space-y-6">
         <FeedReadsBarChart entries={feedReadEntries} />
         <WeekdayAverageBarChart {weekdayAverages} />
       </div>
 
-      <ReadHeatmap days={heatmapData.days} maxCount={heatmapData.maxCount} />
+      <div class="space-y-6">
+        <ArticleHeatmap
+          title="Articles read"
+          emptyMessage="No read activity yet."
+          days={readHeatmapData.days}
+          maxCount={readHeatmapData.maxCount}
+        />
+      </div>
+
+      <div class="space-y-6">
+        <ArticleHeatmap
+          title="Articles published"
+          emptyMessage="No article activity yet."
+          days={publishedArticleHeatmapData.days}
+          maxCount={publishedArticleHeatmapData.maxCount}
+        />
+      </div>
     </div>
   </div>
 {/if}
