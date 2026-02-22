@@ -1,0 +1,25 @@
+meta {
+  name: Fetch RSS
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{SUPABASE_URL}}/functions/v1/fetch-rss
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{FETCH_RSS_INVOKE_SECRET}}
+}
+
+body:json {
+  {
+    "name": "Functions"
+  }
+}

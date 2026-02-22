@@ -5,5 +5,6 @@
         "esbenp.prettier-vscode",
         "redhat.vscode-yaml",
         "spencerwmiles.vscode-task-buttons",
+        "bruno-api-client.bruno",
     ]
 }
