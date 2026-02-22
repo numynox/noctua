@@ -89,9 +89,19 @@ Deno.serve(async (req) => {
           } as FeedResult;
         }
 
+        // Deduplicate articles by feed_id and url
+        const uniqueArticles = Array.from(
+          new Map(
+            filteredArticles.map((article) => [
+              `${article.feed_id}|${article.url}`,
+              article,
+            ]),
+          ).values(),
+        );
+
         const { error: upsertError } = await supabase
           .from("articles")
-          .upsert(filteredArticles, {
+          .upsert(uniqueArticles, {
             onConflict: "feed_id, url",
             ignoreDuplicates: false,
           });
@@ -102,7 +112,7 @@ Deno.serve(async (req) => {
           feed: feed.id,
           total,
           filtered: filteredOut,
-          upserted: filteredArticles.length,
+          upserted: uniqueArticles.length,
           status: "Success",
         } as FeedResult;
       } catch (err) {

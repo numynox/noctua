@@ -3,18 +3,18 @@ export function stripHtml(html: string | null | undefined): string | null {
   if (!html) return null;
   try {
     const doc = new DOMParser().parseFromString(html, "text/html");
-    if (doc) {
+    if (doc && doc.body) {
       doc
         .querySelectorAll("script, style, noscript")
         .forEach((n) => n.remove());
-      const text = doc.body?.textContent || "";
+      const text = doc.body.textContent || "";
       return text.replace(/\s+/g, " ").trim() || null;
     }
   } catch (e) {
     // fallback
   }
   return (
-    html
+    String(html)
       .replace(/<[^>]*>/g, " ")
       .replace(/\s+/g, " ")
       .trim() || null
@@ -35,7 +35,7 @@ export function decodeHtmlEntities(text: string | null): string | null {
 }
 
 export function decodeNumericEntities(text: string | null): string | null {
-  if (!text) return null;
+  if (!text || typeof text !== "string") return null;
   return text.replace(/&#(x?[0-9a-f]+);/gi, (match, code) => {
     const base = code.startsWith("x") ? 16 : 10;
     const num = parseInt(code.replace(/^x/, ""), base);
