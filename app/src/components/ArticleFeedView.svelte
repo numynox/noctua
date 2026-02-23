@@ -21,6 +21,17 @@
   let siteTitle = $state("Noctua");
   let articleFetchLimit = $state(300);
 
+  // Progress tracking for unseen articles
+  let initialUnseen = $state(0);
+  let progress = $derived.by(() => {
+    if (initialUnseen === 0) return unreadAndUnseenDisplayed === 0 ? 100 : 0;
+    const ratio = Math.max(
+      0,
+      Math.min(1, (initialUnseen - unreadAndUnseenDisplayed) / initialUnseen),
+    );
+    return Math.round(ratio * 100);
+  });
+
   let sectionTitle = $derived.by(() => {
     if (!selectedSectionId) return "No Sections";
     return (
@@ -58,10 +69,6 @@
   function getSelectedFeedFromUrl() {
     if (typeof window === "undefined") return null;
     return new URLSearchParams(window.location.search).get("feed");
-  }
-
-  function sectionHref(sectionId: string) {
-    return `${baseUrl}?section=${encodeURIComponent(sectionId)}`;
   }
 
   function handleStatsChange(count: number) {
@@ -186,6 +193,19 @@
       updateDocumentTitle();
     }
   });
+
+  // Capture the initial unseen count once after content finished loading.
+  $effect(() => {
+    if (
+      !loading &&
+      !errorMessage &&
+      isLoggedIn &&
+      initialUnseen === 0 &&
+      unreadAndUnseenDisplayed > 0
+    ) {
+      initialUnseen = unreadAndUnseenDisplayed;
+    }
+  });
 </script>
 
 {#if loading}
@@ -202,26 +222,20 @@
   </div>
 {:else}
   <div
-    class="sticky top-0 z-20 mb-6 -mx-4 lg:-mx-8 px-6 lg:px-8 bg-base-100/80 backdrop-blur-sm border-b border-accent/20"
+    class="sticky top-0 z-20 mb-6 -mx-4 lg:-mx-8 px-6 lg:px-8 bg-base-100/80 backdrop-blur-sm border-b border-base-300/60 relative"
   >
     <div class="py-3 flex items-center justify-between gap-4">
       {#if selectedSectionId}
         <a
-          href={sectionHref(selectedSectionId)}
-          class="flex items-center gap-2 text-3xl font-bold hover:text-primary transition-colors"
+          href="#"
+          on:click|preventDefault={() => window.location.reload()}
+          class="flex items-center gap-2 text-3xl font-bold hover:text-secondary transition-colors"
         >
-          <span class="text-2xl md:hidden" aria-hidden="true"
-            >{sectionIcon}</span
-          >
+          <span class="text-2xl md:hidden" aria-hidden="true">
+            {sectionIcon}
+          </span>
           <span>{visibleTitle}</span>
         </a>
-      {:else}
-        <h1 class="flex items-center gap-2 text-3xl font-bold">
-          <span class="text-2xl md:hidden" aria-hidden="true"
-            >{sectionIcon}</span
-          >
-          <span>{visibleTitle}</span>
-        </h1>
       {/if}
 
       <div class="flex items-center gap-2">
@@ -233,7 +247,36 @@
         >
       </div>
     </div>
+
+    {#if articles.length > 0}
+      <!-- Thin progress bar as bottom border of the sticky header -->
+      <div
+        class="absolute left-0 bottom-0 w-full h-0.5 overflow-visible"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow={progress}
+        title={progress + "% read — click to focus"}
+      >
+        <!-- track (matches the header border) -->
+        <div class="absolute left-0 top-0 w-full h-full bg-base-300"></div>
+
+        <!-- filled portion (grows with progress) -->
+        <div
+          class="absolute left-0 top-0 h-full bg-accent transition-all duration-300"
+          style={`width: ${progress}%`}
+        ></div>
+
+        <!-- subtle glow behind the filled portion -->
+        <div
+          class="absolute left-0 rounded-full bg-accent"
+          style={`width: ${progress}%; height: 6px; bottom: -3px; filter: blur(6px); opacity: 0.45;`}
+        ></div>
+      </div>
+    {/if}
   </div>
 
-  <ArticleList {articles} onStatsChange={handleStatsChange} />
+  <div id="article-list">
+    <ArticleList {articles} onStatsChange={handleStatsChange} />
+  </div>
 {/if}
