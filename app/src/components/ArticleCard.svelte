@@ -67,8 +67,9 @@
   }
 </script>
 
-<div
-  class="card bg-base-300 cursor-pointer transition-all rounded-lg hover:outline hover:outline-2 hover:outline-primary"
+<button
+  type="button"
+  class="card bg-base-300 cursor-pointer transition-all rounded-lg hover:outline hover:outline-2 hover:outline-primary text-left"
   class:opacity-60={isRead || isSeen}
   class:grayscale-25={isRead || isSeen}
   onclick={handleCardClick}
@@ -157,4 +158,4 @@
       </div>
     {/if}
   </div>
-</div>
+</button>

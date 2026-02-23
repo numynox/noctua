@@ -202,7 +202,7 @@
   </div>
 {:else}
   <div
-    class="sticky top-0 z-20 mb-6 -mx-4 lg:-mx-8 px-6 lg:px-8 bg-base-100/80 backdrop-blur-sm border-b border-base-300/60"
+    class="sticky top-0 z-20 mb-6 -mx-4 lg:-mx-8 px-6 lg:px-8 bg-base-100/80 backdrop-blur-sm border-b border-accent/20"
   >
     <div class="py-3 flex items-center justify-between gap-4">
       {#if selectedSectionId}
