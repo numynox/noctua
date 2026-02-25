@@ -75,8 +75,11 @@
       if (oldestReadAt) {
         const oldestDate = new Date(oldestReadAt);
         const now = new Date();
-        const diffMs = now.getTime() - oldestDate.getTime();
-        const diffWeeks = Math.ceil(diffMs / (7 * 24 * 60 * 60 * 1000));
+        const startOfCurrentWeek = startOfWeekMonday(now);
+        const startOfOldestWeek = startOfWeekMonday(oldestDate);
+        const diffMs =
+          startOfCurrentWeek.getTime() - startOfOldestWeek.getTime();
+        const diffWeeks = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000)) + 1;
         availableWeeks = Math.min(diffWeeks, statisticsWeeks);
       }
       effectiveWeeks = Math.max(availableWeeks, 1); // at least 1 week
