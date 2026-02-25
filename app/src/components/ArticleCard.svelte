@@ -1,4 +1,5 @@
 <script lang="ts">
+  import placeholderImage from "../assets/placeholder.png?url";
   import type { Article } from "../lib/types";
 
   interface Props {
@@ -56,7 +57,11 @@
   function handleImageError(e: Event) {
     const target = e.target as HTMLImageElement;
     if (target) {
-      target.style.display = "none";
+      // Fallback to placeholder if the article image fails to load.
+      // We also remove the onerror handler to prevent an infinite loop
+      // if the placeholder itself fails to load for some reason.
+      target.onerror = null;
+      target.src = placeholderImage;
     }
   }
 
@@ -74,29 +79,18 @@
   class:grayscale-25={isRead || isSeen}
   onclick={handleCardClick}
 >
-  {#if article.image_url}
-    <figure class="relative">
-      <img
-        src={article.image_url}
-        alt=""
-        class="h-40 lg:h-50 w-full object-cover bg-base-300"
-        loading="lazy"
-        onerror={handleImageError}
-      />
-      <div
-        class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-base-300 to-transparent"
-      ></div>
-    </figure>
-  {:else}
-    <figure class="relative">
-      <div
-        class="h-40 lg:h-50 w-full bg-radial-[at_50%_-50%] from-secondary to-base-300"
-      ></div>
-      <div
-        class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-base-300 to-transparent"
-      ></div>
-    </figure>
-  {/if}
+  <figure class="relative">
+    <img
+      src={article.image_url || placeholderImage}
+      alt={article.title}
+      class="h-40 lg:h-50 w-full object-cover bg-base-300"
+      loading="lazy"
+      onerror={handleImageError}
+    />
+    <div
+      class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-base-300 to-transparent"
+    ></div>
+  </figure>
   <div class="card-body p-4 relative z-10 -mt-18">
     <div class="text-xs text-base-content/60 flex flex-wrap gap-2">
       <span class="badge badge-neutral badge-sm flex items-center gap-1">
