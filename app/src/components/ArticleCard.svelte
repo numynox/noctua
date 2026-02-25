@@ -69,7 +69,7 @@
 
 <button
   type="button"
-  class="card bg-base-300 cursor-pointer transition-all rounded-lg hover:outline hover:outline-2 hover:outline-primary text-left w-full h-full flex flex-col"
+  class="card bg-base-300 cursor-pointer transition-all rounded-lg hover:outline hover:outline-2 hover:outline-primary text-left w-full"
   class:opacity-60={isRead || isSeen}
   class:grayscale-25={isRead || isSeen}
   onclick={handleCardClick}
@@ -97,7 +97,7 @@
       ></div>
     </figure>
   {/if}
-  <div class="card-body p-4 relative z-10 -mt-18 flex flex-col grow">
+  <div class="card-body p-4 relative z-10 -mt-18">
     <div class="text-xs text-base-content/60 flex flex-wrap gap-2">
       <span class="badge badge-neutral badge-sm flex items-center gap-1">
         {#if article.feed_icon}
@@ -139,7 +139,7 @@
       {article.title}
     </h3>
 
-    <p class="text-sm text-base-content/80 line-clamp-3 grow">
+    <p class="text-sm text-base-content/80 line-clamp-3">
       {article.summary || ""}
     </p>
 
