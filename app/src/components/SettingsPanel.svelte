@@ -179,8 +179,6 @@
   </div>
 {:else}
   <div class="max-w-2xl mx-auto space-y-8">
-    <AccountSection {userEmail} {authError} {isBusy} onLogout={handleLogout} />
-
     <SectionsSection {userId} onSectionDataChanged={notifySectionDataChanged} />
 
     <AppearanceSection
@@ -191,6 +189,8 @@
       onThemeChange={handleThemeChange}
       onPreferencesChange={updatePreferences}
     />
+
+    <AccountSection {userEmail} {authError} {isBusy} onLogout={handleLogout} />
 
     <DangerZoneSection onClearHistory={handleClearHistory} />
   </div>

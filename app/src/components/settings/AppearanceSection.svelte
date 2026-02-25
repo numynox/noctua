@@ -25,6 +25,40 @@
     </h2>
 
     <div class="space-y-4">
+      <label class="flex items-center justify-between gap-4 cursor-pointer">
+        <div class="flex-1">
+          <span class="font-semibold block">Hide Seen Articles</span>
+          <span class="text-sm text-base-content/60"
+            >Read or seen articles will be hidden on next page load</span
+          >
+        </div>
+        <input
+          type="checkbox"
+          class="toggle toggle-primary"
+          bind:checked={showReadArticles}
+          onchange={onPreferencesChange}
+        />
+      </label>
+
+      <label class="flex items-center justify-between gap-4 cursor-pointer">
+        <div class="flex-1">
+          <span class="font-semibold block">Auto-Mark as Seen</span>
+          <span class="text-sm text-base-content/60"
+            >Automatically mark articles as seen when scrolled past</span
+          >
+        </div>
+        <input
+          type="checkbox"
+          class="toggle toggle-primary"
+          bind:checked={autoMarkAsSeen}
+          onchange={onPreferencesChange}
+        />
+      </label>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="space-y-4">
       <div class="font-semibold text-sm">Color Theme</div>
 
       <div class="space-y-2">
@@ -69,40 +103,6 @@
           </p>
         {/if}
       </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="space-y-4">
-      <label class="flex items-center justify-between gap-4 cursor-pointer">
-        <div class="flex-1">
-          <span class="font-semibold block">Hide Seen Articles</span>
-          <span class="text-sm text-base-content/60"
-            >Read or seen articles will be hidden on next page load</span
-          >
-        </div>
-        <input
-          type="checkbox"
-          class="toggle toggle-primary"
-          bind:checked={showReadArticles}
-          onchange={onPreferencesChange}
-        />
-      </label>
-
-      <label class="flex items-center justify-between gap-4 cursor-pointer">
-        <div class="flex-1">
-          <span class="font-semibold block">Auto-Mark as Seen</span>
-          <span class="text-sm text-base-content/60"
-            >Automatically mark articles as seen when scrolled past</span
-          >
-        </div>
-        <input
-          type="checkbox"
-          class="toggle toggle-primary"
-          bind:checked={autoMarkAsSeen}
-          onchange={onPreferencesChange}
-        />
-      </label>
     </div>
   </div>
 </section>
