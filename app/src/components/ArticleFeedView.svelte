@@ -228,7 +228,7 @@
       {#if selectedSectionId}
         <a
           href="#"
-          on:click|preventDefault={() => window.location.reload()}
+          onclick={(e) => { e.preventDefault(); window.location.reload(); }}
           class="flex items-center gap-2 text-3xl font-bold hover:text-secondary transition-colors"
         >
           <span class="text-2xl md:hidden" aria-hidden="true">
