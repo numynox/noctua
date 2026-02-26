@@ -8,10 +8,18 @@
     isSeen: boolean;
     readTimestamp: string | null;
     onArticleClick: () => void;
+    /** when true the card should not be visually dimmed/grayscaled */
+    noDim?: boolean;
   }
 
-  let { article, isRead, isSeen, readTimestamp, onArticleClick }: Props =
-    $props();
+  let {
+    article,
+    isRead,
+    isSeen,
+    readTimestamp,
+    onArticleClick,
+    noDim = false,
+  }: Props = $props();
 
   function formatDate(dateStr: string | null): string {
     if (!dateStr) return "";
@@ -75,8 +83,8 @@
 <button
   type="button"
   class="card bg-base-300 cursor-pointer transition-all rounded-lg hover:outline hover:outline-2 hover:outline-primary text-left w-full"
-  class:opacity-60={isRead || isSeen}
-  class:grayscale-25={isRead || isSeen}
+  class:opacity-60={(isRead || isSeen) && !noDim}
+  class:grayscale-25={(isRead || isSeen) && !noDim}
   onclick={handleCardClick}
 >
   <figure class="relative">

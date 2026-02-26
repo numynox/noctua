@@ -1,0 +1,9 @@
+---
+import ArticleFeedView from "../components/ArticleFeedView.svelte";
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Read Articles" activeId="read">
+  <!-- `onlyRead` flag ensures ArticleFeedView shows only items marked as read -->
+  <ArticleFeedView client:load onlyRead={true} />
+</Layout>

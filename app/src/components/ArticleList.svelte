@@ -19,9 +19,18 @@
   interface Props {
     articles: Article[];
     onStatsChange?: (count: number) => void;
+    /** When true, only articles that have been marked read are shown */
+    onlyRead?: boolean;
+    /** When true, cards should not be dimmed/gray */
+    noDim?: boolean;
   }
 
-  let { articles, onStatsChange }: Props = $props();
+  let {
+    articles,
+    onStatsChange,
+    onlyRead = false,
+    noDim = false,
+  }: Props = $props();
 
   let persistedReadArticles = $state<ReadArticleStatuses>({});
   let optimisticReadArticles = $state<ReadArticleStatuses>({});
@@ -105,9 +114,14 @@
 
     let result = articles;
 
-    // Filter by read/seen status (hide articles that were read/seen at page load)
-    if (hideSeenArticles) {
-      result = result.filter((a) => !initialSeenArticles[a.id]);
+    if (onlyRead) {
+      // keep only articles with a read status (either persisted or optimistic)
+      result = result.filter((a) => !!readArticles[a.id]);
+    } else {
+      // Filter by read/seen status (hide articles that were read/seen at page load)
+      if (hideSeenArticles) {
+        result = result.filter((a) => !initialSeenArticles[a.id]);
+      }
     }
 
     // Filter by search query
@@ -124,11 +138,15 @@
     return result;
   });
 
-  let displayedUnreadAndUnseenCount = $derived.by(
-    () =>
-      filteredArticles.filter((article) => !(article.id in seenArticles))
-        .length,
-  );
+  let displayedUnreadAndUnseenCount = $derived.by(() => {
+    if (onlyRead) {
+      // count read articles for stats on the read-only page
+      return filteredArticles.length;
+    }
+
+    return filteredArticles.filter((article) => !(article.id in seenArticles))
+      .length;
+  });
 
   $effect(() => {
     onStatsChange?.(displayedUnreadAndUnseenCount);
@@ -321,26 +339,29 @@
           isSeen={article.id in seenArticles}
           readTimestamp={readArticles[article.id]?.timestamp || null}
           onArticleClick={() => handleArticleClick(article.id)}
+          {noDim}
         />
       </div>
     {/each}
   </div>
 {/if}
 
-<div class="h-[100svh] bg-base-100 flex items-center justify-center">
-  <div
-    class="text-center py-8 md:py-20 bg-base-200/50 rounded-3xl border border-dashed border-base-300 w-full max-w-3xl"
-  >
-    <div class="text-6xl mb-4">✅</div>
-    <h3 class="text-2xl font-bold mb-2">You're all caught up</h3>
-    <p class="text-base-content/60 mb-6 px-6 md:px-16">
-      There are no articles to show right now — either you've already viewed
-      them, or your current filters hide some items.
-    </p>
-    <div class="flex items-center justify-center gap-3">
-      <button class="btn btn-primary" onclick={handleReload}>
-        Reload Page
-      </button>
+{#if !onlyRead}
+  <div class="h-[100svh] bg-base-100 flex items-center justify-center">
+    <div
+      class="text-center py-8 md:py-20 bg-base-200/50 rounded-3xl border border-dashed border-base-300 w-full max-w-3xl"
+    >
+      <div class="text-6xl mb-4">✅</div>
+      <h3 class="text-2xl font-bold mb-2">You're all caught up</h3>
+      <p class="text-base-content/60 mb-6 px-6 md:px-16">
+        There are no articles to show right now — either you've already viewed
+        them, or your current filters hide some items.
+      </p>
+      <div class="flex items-center justify-center gap-3">
+        <button class="btn btn-primary" onclick={handleReload}>
+          Reload Page
+        </button>
+      </div>
     </div>
   </div>
-</div>
+{/if}

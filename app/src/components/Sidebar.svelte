@@ -130,6 +130,11 @@
     const normalizedBase = baseUrl === "/" ? "" : baseUrl.replace(/\/$/, "");
     return `${normalizedBase}/statistics`;
   }
+
+  function readHref() {
+    const normalizedBase = baseUrl === "/" ? "" : baseUrl.replace(/\/$/, "");
+    return `${normalizedBase}/read`;
+  }
 </script>
 
 <div class="lg:hidden fixed bottom-6 right-6 z-50">
@@ -262,6 +267,18 @@
   </nav>
 
   <div class="p-4 border-t border-base-300">
+    <a
+      href={readHref()}
+      class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+        {activeId === 'read'
+        ? 'bg-primary text-primary-content font-semibold shadow-md'
+        : 'hover:bg-base-300 text-base-content/80'}"
+      onclick={closeMobileMenu}
+    >
+      <span class="text-xl">✅</span>
+      <span>Read</span>
+    </a>
+
     <a
       href={statisticsHref()}
       class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all

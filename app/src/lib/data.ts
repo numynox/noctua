@@ -497,7 +497,7 @@ export async function reorderFeedInSectionForUser(
   return true;
 }
 
-async function fetchArticlesForSections(
+export async function fetchArticlesForSections(
   sections: Section[],
   selectedSectionId?: string | null,
   limit = 300,

@@ -1,12 +1,20 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import {
+    fetchArticlesForSections,
     getLoginHref,
     loadUserContent,
     onAuthStateChange,
   } from "../lib/data";
   import type { Article, Section } from "../lib/types";
   import ArticleList from "./ArticleList.svelte";
+
+  export interface Props {
+    onlyRead?: boolean;
+  }
+
+  // props passed from the parent (Astro page)
+  let { onlyRead = false }: Props = $props();
 
   let loading = $state(true);
   let errorMessage = $state("");
@@ -80,6 +88,11 @@
       return;
     }
 
+    if (onlyRead) {
+      document.title = `Read articles | ${siteTitle}`;
+      return;
+    }
+
     if (selectedSectionId) {
       document.title = `${visibleTitle} | ${siteTitle}`;
       return;
@@ -95,10 +108,16 @@
     try {
       const selectedFromUrl = getSelectedSectionFromUrl();
       const selectedFeedFromUrl = getSelectedFeedFromUrl();
-      const content = await loadUserContent(selectedFromUrl, articleFetchLimit);
+      // when viewing the read page we ignore any section from URL so pass null
+      const content = await loadUserContent(
+        onlyRead ? null : selectedFromUrl,
+        articleFetchLimit,
+      );
 
       sections = content.sections;
-      selectedSectionId = content.selectedSectionId;
+      // keep section id only when not in read mode; otherwise leave null so no
+      // ?section= param is added later
+      selectedSectionId = onlyRead ? null : content.selectedSectionId;
       isLoggedIn = content.isLoggedIn;
 
       if (!isLoggedIn) {
@@ -106,22 +125,46 @@
         return;
       }
 
-      const selectedSection = sections.find(
-        (section) => section.id === selectedSectionId,
-      );
-      selectedFeedId =
-        selectedFeedFromUrl &&
-        selectedSection?.feeds.some((feed) => feed.id === selectedFeedFromUrl)
-          ? selectedFeedFromUrl
-          : null;
+      // determine feed selection if provided (works across all sections)
+      if (selectedFeedFromUrl) {
+        const exists = sections.some((sec) =>
+          sec.feeds.some((feed) => feed.id === selectedFeedFromUrl),
+        );
+        selectedFeedId = exists ? selectedFeedFromUrl : null;
+      } else {
+        selectedFeedId = null;
+      }
 
-      articles = selectedFeedId
-        ? content.articles.filter(
-            (article) => article.feed_id === selectedFeedId,
-          )
-        : content.articles;
+      if (onlyRead) {
+        // loadUserContent will have fetched only the first-section articles,
+        // so call the helper directly to get everything.
+        const allArticles = await fetchArticlesForSections(
+          sections,
+          null,
+          articleFetchLimit,
+        );
+        articles = selectedFeedId
+          ? allArticles.filter(
+              (article: Article) => article.feed_id === selectedFeedId,
+            )
+          : allArticles;
+      } else {
+        articles = selectedFeedId
+          ? content.articles.filter(
+              (article) => article.feed_id === selectedFeedId,
+            )
+          : content.articles;
+      }
 
-      if (sections.length > 0 && selectedSectionId) {
+      // update URL parameters: clear section when in read mode, otherwise
+      // keep them in sync with current selection
+      if (onlyRead) {
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.has("section")) {
+          currentUrl.searchParams.delete("section");
+          window.history.replaceState({}, "", currentUrl.toString());
+        }
+      } else if (sections.length > 0 && selectedSectionId) {
         const currentUrl = new URL(window.location.href);
         const currentParam = currentUrl.searchParams.get("section");
         const currentFeedParam = currentUrl.searchParams.get("feed");
@@ -226,29 +269,41 @@
   >
     <div class="py-3 flex items-center justify-between gap-4">
       {#if selectedSectionId}
-        <a
-          href="#"
-          onclick={(e) => { e.preventDefault(); window.location.reload(); }}
+        <button
+          type="button"
+          onclick={() => {
+            window.location.reload();
+          }}
           class="flex items-center gap-2 text-3xl font-bold hover:text-secondary transition-colors"
         >
           <span class="text-2xl md:hidden" aria-hidden="true">
             {sectionIcon}
           </span>
           <span>{visibleTitle}</span>
-        </a>
+        </button>
+      {:else if onlyRead}
+        <span class="text-3xl font-bold">Read articles</span>
       {/if}
 
       <div class="flex items-center gap-2">
-        <span
-          class="badge badge-primary badge-md md:badge-xl"
-          title="Unread and unseen articles"
-          aria-label="Unread and unseen articles"
-          >{unreadAndUnseenDisplayed}</span
-        >
+        {#if onlyRead}
+          <span
+            class="badge badge-secondary badge-md md:badge-xl"
+            title="Read articles"
+            aria-label="Read articles">{unreadAndUnseenDisplayed}</span
+          >
+        {:else}
+          <span
+            class="badge badge-primary badge-md md:badge-xl"
+            title="Unread and unseen articles"
+            aria-label="Unread and unseen articles"
+            >{unreadAndUnseenDisplayed}</span
+          >
+        {/if}
       </div>
     </div>
 
-    {#if articles.length > 0}
+    {#if articles.length > 0 && !onlyRead}
       <!-- Thin progress bar as bottom border of the sticky header -->
       <div
         class="absolute left-0 bottom-0 w-full h-0.5 overflow-visible"
@@ -277,6 +332,11 @@
   </div>
 
   <div id="article-list">
-    <ArticleList {articles} onStatsChange={handleStatsChange} />
+    <ArticleList
+      {articles}
+      onStatsChange={handleStatsChange}
+      {onlyRead}
+      noDim={onlyRead}
+    />
   </div>
 {/if}
