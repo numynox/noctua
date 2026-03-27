@@ -6,10 +6,10 @@
 
 const CACHE_PREFIX = "noctua-v3";
 const PRECACHE_ASSETS = [
-  "/noctua/favicon.ico",
-  "/noctua/android-chrome-192x192.png",
-  "/noctua/android-chrome-512x512.png",
-  "/noctua/noctua.png",
+  "./favicon.ico",
+  "./android-chrome-192x192.png",
+  "./android-chrome-512x512.png",
+  "./noctua.png",
 ];
 
 self.addEventListener("install", (event) => {

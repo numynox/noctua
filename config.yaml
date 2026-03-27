@@ -4,6 +4,6 @@ settings:
   website:
     title: "Noctua"
     description: "An RSS feed reader."
-    base_url: "/noctua"
+    base_url: "/nexus/noctua"
     article_fetch_limit: 300 # Applies per section
     statistics_weeks: 8 # Window for weekly average cards/charts

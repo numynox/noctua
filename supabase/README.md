@@ -38,7 +38,7 @@ Getting started with Supabase (quick notes)
   - Recommended workflow: keep your Edge Functions in version control under `supabase/functions` inside this repository. If a function only exists in the Dashboard, copy its source into `supabase/functions/<name>` locally (or recreate it with `supabase functions new <name>`), then iterate locally and deploy with the CLI.
 
 - Quick integration tips for this repo:
-  - A lightweight Supabase client is available at `app/src/lib/supabase.ts` to call `supabase.functions.invoke(...)` from the frontend or server.
+  - Supabase clients are available at `app/noctua/src/lib/supabase.ts` and `app/vibilia/src/lib/supabase.ts`.
   - Add your Supabase keys to `.env` (see top-level `.env.example`). For Astro, expose public keys with the `PUBLIC_` prefix.
 
   - Syncing remote DB schema (migrations)

@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PUBLIC_SUPABASE_URL: ${{ vars.PUBLIC_SUPABASE_URL }}
-      PUBLIC_SUPABASE_KEY: ${{ vars.PUBLIC_SUPABASE_KEY }}
+      PUBLIC_SUPABASE_ANON_KEY: ${{ vars.PUBLIC_SUPABASE_ANON_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,7 +34,7 @@ jobs:
         run: npm ci
 
       - name: Build website
-        run: npm run build:website
+        run: npm run build:websites
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -42,7 +42,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: output/app
+          path: output/pages
 
   deploy:
     environment:

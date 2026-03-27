@@ -1,275 +1,188 @@
-# 🦉 Noctua
+# Nexus
 
-**AI-powered RSS feed aggregator with intelligent summarization**
+Monorepo for two Astro + Svelte apps sharing one Supabase backend:
 
-Noctua is an open-source project that downloads RSS feeds, filters articles based on your preferences, summarizes them using AI (Gemini), and generates a beautiful static website that you can host anywhere.
+- `app/noctua`: RSS reader
+- `app/vibilia`: Fuel tracking and expense prototype
 
-## ✨ Features
+Both apps authenticate against the same Supabase project (`nexus`), so one Supabase account can be used across both UIs.
 
-- **📰 RSS Feed Aggregation**: Download and parse feeds from multiple sources, organized into sections
-- **🔍 Smart Filtering**: Filter articles by age, keywords, content length, and more
-- **🤖 AI Summarization**: Generate concise summaries using Google's Gemini AI
-- **🌐 Static Website**: Beautiful, responsive site built with Astro and Tailwind CSS
-- **💾 Local Storage**: Track read articles and preferences in browser storage
-- **🎨 Theme Support**: Light, dark, and auto themes
-- **🚀 GitHub Pages**: One-click deployment with GitHub Actions
+## Repository layout
 
-## 📁 Project Structure
-
-```
-noctua/
-├── config.yaml              # Main configuration file
-├── workflow/
-│   ├── common/              # Shared Python utilities
-│   ├── download/            # Download and parse feeds
-│   ├── filter/              # Filter and cleanup
-│   └── summarize/           # AI summarization (Node.js)
-├── app/                     # Astro static website
-│   ├── src/
-│   ├── public/
-│   └── astro.config.mjs
-├── output/                  # Generated outputs (git-ignored)
-│   ├── download/
-│   ├── filter/
-│   └── summarize/
-├── .github/
-│   └── workflows/           # GitHub Actions
-├── pyproject.toml           # Python dependencies
-└── package.json             # Node.js dependencies
+```text
+nexus/
+├── app/
+│   ├── noctua/
+│   └── vibilia/
+├── supabase/
+│   ├── migrations/
+│   ├── functions/
+│   │   ├── fetch-rss/
+│   │   └── refresh-fuel-prices/
+│   └── config.toml
+├── config.yaml
+└── package.json
 ```
 
-## 🚀 Quick Start
+## Local setup
 
-### Prerequisites
-
-- [uv](https://docs.astral.sh/uv/) (Python package manager)
-- [Node.js](https://nodejs.org/) v20+
-- [Gemini API key](https://aistudio.google.com/apikey) (for AI summarization)
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/yourusername/noctua.git
-   cd noctua
-   ```
-
-2. **Install Python dependencies**
-
-   ```bash
-   uv sync
-   ```
-
-3. **Install Node.js dependencies**
-
-   ```bash
-   npm run install:all
-   # Or manually:
-   # npm install
-   # cd workflow/summarize && npm install && cd ../..
-   # cd app && npm install && cd ..
-   ```
-
-4. **Set up your Gemini API key**
-   ```bash
-   export GEMINI_API_KEY="your-api-key-here"
-   ```
-
-### Running the Pipeline
-
-Run each step independently:
+### 1) Install dependencies
 
 ```bash
-# Download feeds
-uv run python -m workflow.download.main
-
-# Filter and cleanup
-uv run python -m workflow.filter.main
-
-# AI summarization
-node workflow/summarize/index.js
-
-# Build website
-cd app && npm run build && cd ..
+npm install
 ```
 
-Or use npm scripts:
+### 2) Configure environment
+
+Copy `.env.example` to `.env` and set values.
+
+Required for both apps:
 
 ```bash
-# Full pipeline
-npm run workflow:all
-
-# Individual steps
-npm run download
-npm run filter
-npm run summarize
-npm run build:website
-```
-
-### Preview the Website
-
-```bash
-cd app
-npm run dev:website
-# Open http://localhost:4321
-```
-
-## ⚙️ Configuration
-
-Edit `config.yaml` to customize:
-
-### Adding Feeds
-
-```yaml
-sections:
-  technology:
-    name: "Technology"
-    icon: "💻"
-    enabled: true
-    feeds:
-      - name: "Hacker News"
-        url: "https://hnrss.org/frontpage"
-        enabled: true
-      - name: "Your Feed"
-        url: "https://example.com/feed.xml"
-        enabled: true
-```
-
-### Filtering Rules
-
-Filtering can be defined globally, per section, or per feed.
-
-```yaml
-settings:
-  website:
-    article_fetch_limit: 300 # Max articles fetched per section in app UI
-    statistics_weeks: 8 # Window for weekly average cards/charts
-    statistics_heatmap_weeks: 52 # Window for commit-style heatmap
-  filter:
-    max_age_hours: 72 # Exclude old articles
-    exclude_keywords: # Block these terms
-      - "sponsored"
-      - "advertisement"
-
-sections:
-  technology:
-    filter:
-      max_age_hours: 48 # Override global age
-      exclude_keywords: ["crypto"]
-      feeds:
-        - name: "Heise"
-          url: "https://www.heise.de/rss/heise-atom.xml"
-          enabled: true
-          filter:
-            max_age_hours: 12 # Override global age
-            exclude_keywords: [] # Disable exclude_keywords for this feed
-```
-
-### AI Summarization
-
-```yaml
-summarization:
-  model: "gemini-2.5-flash"
-  max_articles_per_section: 10
-  max_articles_overall: 20
-```
-
-## 🐳 Docker
-
-Build and run with Docker:
-
-```bash
-# Build
-docker build -t noctua .
-
-# Run all steps
-docker run -e GEMINI_API_KEY=$GEMINI_API_KEY -v $(pwd)/output:/app/output noctua
-```
-
-## 🚀 GitHub Pages Deployment
-
-1. **Enable GitHub Pages** in your repository settings (Settings → Pages → Source: GitHub Actions)
-
-2. **Add your Gemini API key** as a repository secret:
-   - Go to Settings → Secrets and variables → Actions
-   - Add `GEMINI_API_KEY` with your API key
-
-3. **Push to main** - the workflow will:
-   - Download and filter feeds
-   - Generate AI summaries
-   - Build and deploy the website
-
-### Workflow Options
-
-- **Full build**: Runs daily at 6 AM UTC with AI summarization
-- **Quick update**: Runs every 4 hours without AI (uses cached summaries)
-
-Trigger manually from Actions tab with options:
-
-- Skip summarization (save API tokens)
-- Force full rebuild (ignore caches)
-
-## 🔧 Environment Variables
-
-| Variable            | Description            | Required         |
-| ------------------- | ---------------------- | ---------------- |
-| `GEMINI_API_KEY`    | Google Gemini API key  | For summary      |
-| `NOCTUA_ROOT`       | Project root directory | Optional         |
-| `NOCTUA_OUTPUT_DIR` | Base output directory  | Optional         |
-| `NOCTUA_BASE_URL`   | Website base URL       | For GitHub Pages |
-
-### Supabase frontend configuration
-
-The Astro app in `app/` now reads data directly from Supabase in the browser.
-
-Set these variables in your local `.env` (or shell):
-
-```bash
-PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
 PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
 ```
 
-For local Supabase CLI, `PUBLIC_SUPABASE_URL` is typically:
+Required for Edge Functions:
 
 ```bash
-PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+FETCH_RSS_INVOKE_SECRET=<long-random-secret>
+FUEL_PRICE_INVOKE_SECRET=<long-random-secret>
+FUEL_PRICE_API_KEY=<tankerkoenig-api-key>
 ```
 
-Apply DB migrations (including the auth profile trigger):
+### 3) Link local Supabase CLI to your empty `nexus` project
 
 ```bash
-npx supabase db reset
-# or against remote
-npx supabase db push
+npm run supabase:login
+npm run supabase:projects:list
+npm run supabase:link -- --project-ref <your-project-ref>
 ```
 
-Required manual Supabase dashboard setup:
+### 4) Apply schema to Supabase
 
-- Enable email/password authentication provider
-- Set allowed redirect URLs for local dev and GitHub Pages
-- Ensure repository variables `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY` are set for GitHub Actions
+If `nexus` is empty, run:
 
-## 🌐 User Features
+```bash
+npm run supabase:db:push
+```
 
-The generated website includes:
+This applies all migrations for both apps.
 
-- **Read tracking**: Articles marked as read are dimmed (stored in browser)
-- **Section visibility**: Show/hide entire sections
-- **Filtering**: Search and filter by date range
-- **Compact view**: Toggle between detailed and compact article cards
-- **Theme selection**: Light, dark, or auto (follows system)
+### 5) Deploy functions to `nexus`
 
-All preferences are stored in browser localStorage - each user maintains their own read history.
+```bash
+npm run supabase:functions:deploy:fetch-rss
+npm run supabase:functions:deploy:refresh-fuel-prices
+```
 
-## 📝 License
+### 6) Configure Vault secrets for hourly `fetch-rss` cron
 
-AGPL License - see [LICENSE](LICENSE) for details.
+`fetch-rss` is invoked every hour via `pg_cron` calling `public.invoke_fetch_rss()`.
 
-## 🤝 Contributing
+The function reads these secrets from `vault.decrypted_secrets`:
 
-Contributions welcome! Please feel free to submit issues and pull requests.
+- `FETCH_RSS_INVOKE_SECRET`
+- `FETCH_RSS_FUNCTION_URL` (for example `https://<your-project-ref>.supabase.co/functions/v1/fetch-rss`)
 
-## 🦉 Why "Noctua"?
+Set them in Supabase Dashboard → Project Settings → Vault, or via SQL:
 
-Noctua is Latin for "owl" - a creature known for wisdom and night vision. Like an owl, this tool helps you see through the noise and find what matters in your news feeds.
+```sql
+select vault.create_secret('your-fetch-rss-invoke-secret', 'FETCH_RSS_INVOKE_SECRET');
+select vault.create_secret('https://<your-project-ref>.supabase.co/functions/v1/fetch-rss', 'FETCH_RSS_FUNCTION_URL');
+```
+
+### 7) Configure Vault + Function secrets for hourly `refresh-fuel-prices`
+
+`refresh-fuel-prices` is invoked every hour via `pg_cron` calling `public.invoke_refresh_fuel_prices()`.
+
+Vault secrets required by SQL scheduler:
+
+- `FUEL_PRICE_INVOKE_SECRET`
+- `REFRESH_FUEL_PRICES_FUNCTION_URL` (for example `https://<your-project-ref>.supabase.co/functions/v1/refresh-fuel-prices`)
+- `FUEL_PRICE_API_KEY`
+
+Create/update these in Supabase Dashboard → Project Settings → Vault, or via SQL:
+
+```sql
+select vault.create_secret('your-refresh-invoke-secret', 'FUEL_PRICE_INVOKE_SECRET');
+select vault.create_secret('https://<your-project-ref>.supabase.co/functions/v1/refresh-fuel-prices', 'REFRESH_FUEL_PRICES_FUNCTION_URL');
+select vault.create_secret('your-tankerkoenig-api-key', 'FUEL_PRICE_API_KEY');
+```
+
+Edge Function runtime secrets required by `refresh-fuel-prices`:
+
+- `FUEL_PRICE_INVOKE_SECRET`
+- `FUEL_PRICE_API_KEY`
+
+Set them in Supabase Dashboard → Project Settings → Edge Functions → Secrets,
+or via CLI:
+
+```bash
+npx supabase secrets set FUEL_PRICE_INVOKE_SECRET=your-refresh-invoke-secret --project-ref <your-project-ref>
+npx supabase secrets set FUEL_PRICE_API_KEY=your-tankerkoenig-api-key --project-ref <your-project-ref>
+```
+
+## Development
+
+Run each app separately:
+
+```bash
+npm run dev:noctua   # http://localhost:4321/nexus/noctua
+npm run dev:vibilia  # http://localhost:4321/nexus/vibilia
+```
+
+Run local Supabase stack and functions:
+
+```bash
+npm run supabase:start
+npm run supabase:functions:serve
+```
+
+## Build & deploy (GitHub Pages)
+
+Both apps are built into one static artifact:
+
+- `output/pages/noctua`
+- `output/pages/vibilia`
+
+Build locally:
+
+```bash
+npm run build:websites
+```
+
+GitHub Pages workflow (`.github/workflows/deploy-pages.yml`) publishes `output/pages`.
+
+Production URLs:
+
+- `https://numynox.github.io/nexus/noctua`
+- `https://numynox.github.io/nexus/vibilia`
+
+## Supabase dashboard settings
+
+In `Authentication -> URL Configuration`, add redirect URLs for both local dev and GitHub Pages, e.g.:
+
+- `http://localhost:4321/nexus/noctua`
+- `http://localhost:4321/nexus/vibilia`
+- `https://numynox.github.io/nexus/noctua`
+- `https://numynox.github.io/nexus/vibilia`
+
+Also ensure Email/Password auth is enabled.
+
+## GitHub repository variables
+
+Set repository variables used by the Pages workflow:
+
+- `PUBLIC_SUPABASE_URL`
+- `PUBLIC_SUPABASE_ANON_KEY`
+
+## Useful scripts
+
+- `npm run build:websites`
+- `npm run build:noctua`
+- `npm run build:vibilia`
+- `npm run dev:noctua`
+- `npm run dev:vibilia`
+- `npm run supabase:db:push`
+- `npm run supabase:functions:serve`

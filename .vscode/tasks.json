@@ -7,10 +7,10 @@
             "command": "npm",
             "args": [
                 "run",
-                "build"
+                "build:websites"
             ],
             "options": {
-                "cwd": "${workspaceFolder}/app"
+                "cwd": "${workspaceFolder}"
             },
             "group": {
                 "kind": "build",
@@ -20,10 +20,7 @@
                 "reveal": "always",
                 "panel": "dedicated"
             },
-            "problemMatcher": [],
-            "dependsOn": [
-                "Summarize (AI)"
-            ]
+            "problemMatcher": []
         },
         {
             "label": "Dev Server",
@@ -31,10 +28,27 @@
             "command": "npm",
             "args": [
                 "run",
-                "dev"
+                "dev:noctua"
             ],
             "options": {
-                "cwd": "${workspaceFolder}/app"
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Dev Server Vibilia",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "run",
+                "dev:vibilia"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
             },
             "isBackground": true,
             "presentation": {

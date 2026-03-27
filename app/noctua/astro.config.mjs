@@ -5,7 +5,8 @@ import { readFileSync } from "fs";
 import { load } from "js-yaml";
 
 // Load configuration
-const config = load(readFileSync("../config.yaml", "utf8"));
+const config = load(readFileSync("../../config.yaml", "utf8"));
+const outputBase = config.settings?.output_base || "output";
 
 // https://astro.build/config
 export default defineConfig({
@@ -15,7 +16,7 @@ export default defineConfig({
   output: "static",
 
   // Build output directory
-  outDir: `../${config.settings?.output_base || "output"}/app`,
+  outDir: `../../${outputBase}/pages/noctua`,
 
   // Base path - adjust for GitHub Pages
   base: config.settings?.website?.base_url || "/",
@@ -27,7 +28,7 @@ export default defineConfig({
 
   // Vite configuration
   vite: {
-    envDir: "..",
+    envDir: "../..",
     plugins: [tailwindcss()],
     build: {
       // Ensure assets are inlined or properly referenced
